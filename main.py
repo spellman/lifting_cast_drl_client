@@ -80,6 +80,7 @@ target_db = target_client.create_database(meet_id)
 
 
 
+# FIXME: We need to create a replication only if one does not already exist!
 rep = cloudant.replicator.Replicator(target_client)
 
 replication_doc = rep.create_replication(source_db=source_db, target_db=target_db, continuous=True)
