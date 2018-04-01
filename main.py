@@ -13,23 +13,44 @@ except:
 
 
 
+# Set up program
+
+
+
 # Parse command-line arguments
 
-parser = argparse.ArgumentParser(description='Set up pull replication between liftingcast.com CouchDB database and a local CouchDB database. Note that this script requires CouchDB to be locally installed and running.')
+parser = argparse.ArgumentParser(description="Set up continuous pull replication between liftingcast.com CouchDB database and a local CouchDB database and update a file with the data to be displayed by the DRL lights/display program. Note that this script requires CouchDB to be locally accessible and running.")
 
-parser.add_argument('-m', '--meet-id', dest="meet_id",
+parser.add_argument("-d", "--day-number", dest="day_number",
+                    type=int,
                     required=True,
-                    help='The meet ID, obtained from the meet URL at liftingcast.com.\nExample: 2018 Texas A&M BBQ meet:\nIn https://www.liftingcast.com/meets/myvrzp8l3bty, the meet ID is myvrzp8l3bty.')
+                    help="The platform ID")
 
-parser.add_argument('-p', '--password', dest="password",
+parser.add_argument("-p", "--platform-id", dest="platform_id",
                     required=True,
-                    help='The password that was set for this meet when the meet was created in liftingcast.com.')
+                    help="The platform ID")
+
+parser.add_argument("-o", "--output-file", dest="output_file",
+                    required=False, default="~/drl-input.json",
+                    help="The platform ID")
 
 args = parser.parse_args()
-meet_id = args.meet_id
-password = args.password
+day_number = args.day_number
+platform_id = args.platform_id
+output_file = args.output_file
 
-print("Meet id is {}.\nPassword is {}".format(meet_id, password))
+
+
+# Set up meet ID and password for CouchDB database.
+
+# TODO: There should be a function from the day the script is run to the meet ID and password for the meet (i.e., the database) for that day.
+meet_id = "myvrzp8l3bty"
+password = "xm4sj4ms"
+
+
+
+print("Day {day} of the meet:\n    Meet ID: {meet}\n    Password: {pw}\nPlatform ID: {platform}\nDisplay data will be continually written to the file {}\n  DRL should read in that file when it changes.".format(day=day_number, meet=meet_id, pw=password, platform=platform_id, output_file))
+
 
 
 
