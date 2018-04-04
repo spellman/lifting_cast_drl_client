@@ -57,8 +57,8 @@ print("Day {day} of the meet:\n    Meet ID: {meet}\n    Password: {pw}\nPlatform
 # Set up replication from liftingcast.com CouchDB to local CouchDB.
 
 # Note that the example meet db uses admin party:
-# source_client = CouchDB("", "", admin_party=True, url="http://couchdb.liftingcast.com", connect=True, auto_renew=True)
-# source_db = cloudant.database.CouchDatabase(source_client, "mpcdahi7d1lz_readonly")
+# liftingcast_client = CouchDB("", "", admin_party=True, url="http://couchdb.liftingcast.com", connect=True, auto_renew=True)
+# liftingcast_db = cloudant.database.CouchDatabase(liftingcast_client, "mpcdahi7d1lz_readonly")
 
 # An actual meet will not be admin party but will have a username and password:
 # username: meet id, taken from URL when a new meet is created in liftingcast.com
@@ -70,20 +70,20 @@ print("Day {day} of the meet:\n    Meet ID: {meet}\n    Password: {pw}\nPlatform
 
 
 
-source_client = CouchDB(meet_id, password, url="http://couchdb.liftingcast.com", connect=True, auto_renew=True)
-source_db = source_client.create_database(meet_id)
+liftingcast_client = CouchDB(meet_id, password, url="http://couchdb.liftingcast.com", connect=True, auto_renew=True)
+liftingcast_db = liftingcast_client.create_database(meet_id)
 
-target_client = CouchDB("", "", admin_party=True, url="http://127.0.0.1:5984", connect=True, auto_renew=True)
-target_client.create_database("_replicator")
-target_client.create_database("_global_changes")
-target_db = target_client.create_database(meet_id)
+local_client = CouchDB("", "", admin_party=True, url="http://127.0.0.1:5984", connect=True, auto_renew=True)
+local_client.create_database("_replicator")
+local_client.create_database("_global_changes")
+local_db = local_client.create_database(meet_id)
 
 
 
 # FIXME: We need to create a replication only if one does not already exist!
-rep = cloudant.replicator.Replicator(target_client)
+rep = cloudant.replicator.Replicator(local_client)
 
-replication_doc = rep.create_replication(source_db=source_db, target_db=target_db, continuous=True)
+replication_doc = rep.create_replication(source_db=liftingcast_db, target_db=local_db, continuous=True)
 
 pp = pprint.PrettyPrinter(indent=4)
 print("Replication created!")
