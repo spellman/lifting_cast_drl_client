@@ -54,6 +54,9 @@ print("Day {day} of the meet:\n    Meet ID: {meet}\n    Password: {pw}\nPlatform
 
 
 
+
+
+
 # Set up replication from liftingcast.com CouchDB to local CouchDB.
 
 # Note that the example meet db uses admin party:
@@ -90,3 +93,35 @@ print("Replication created!")
 print("You can manage the replication from the Fauxton admin panel at http://127.0.0.1:5984/_utils/#/replication")
 print("For reference, the replication doc is")
 pp.pprint(replication_doc)
+
+
+
+
+
+
+
+# Make a view of the lifters on this platform
+
+lifters_on_platform = {
+    "_id": "_design/platformLifters",
+    "views": {
+        "platform-lifters": {
+            "map": "function (doc) {{\n  if (doc._id.substr(0, 1) === \"l\" && doc.platformId === \"{platform}\")\n  emit(doc._id, doc);\n}}".format(platform=platform_id)
+        }
+    },
+    "language": "javascript"
+}
+
+lifters_on_platform_ddoc = local_db.create_document(lifters_on_platform)
+
+
+
+
+
+
+
+def get_platform_lifters():
+    return local_db.get_view_result(lifters_on_platform_ddoc["_id"],
+                                    "platform-lifters",
+                                    include_docs=True)
+
