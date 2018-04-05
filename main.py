@@ -13,6 +13,10 @@ except:
 
 
 
+pp = pprint.PrettyPrinter(indent=4)
+
+
+
 # Set up program
 
 
@@ -84,16 +88,21 @@ local_db = local_client.create_database(meet_id)
 
 
 
-# FIXME: We need to create a replication only if one does not already exist!
+def is_our_meet_replication(replication_doc):
+    return (replication_doc["source"]["url"] == liftingcast_db.database_url and
+            replication_doc["target"]["url"] == local_db.database_url)
+
 rep = cloudant.replicator.Replicator(local_client)
 
-replication_doc = rep.create_replication(source_db=liftingcast_db, target_db=local_db, continuous=True)
+if any(is_our_meet_replication(d) for d in rep.list_replications()):
+    print("Meet is already being replicated from liftingcast.com to our local CouchDB.")
+else:
+    replication_doc = rep.create_replication(source_db=liftingcast_db, target_db=local_db, continuous=True)
 
-pp = pprint.PrettyPrinter(indent=4)
-print("Replication created!")
-print("You can manage the replication from the Fauxton admin panel at http://127.0.0.1:5984/_utils/#/replication")
-print("For reference, the replication doc is")
-pp.pprint(replication_doc)
+    print("Replication created.")
+    print("You can manage the replication from the Fauxton admin panel at http://127.0.0.1:5984/_utils/#/replication")
+    print("For reference or Curl actions, the replication doc is")
+    pp.pprint(replication_doc)
 
 
 
