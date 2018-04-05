@@ -124,7 +124,7 @@ lifters_on_platform = {
     "language": "javascript"
 }
 
-lifters_on_platform_ddoc = local_db.create_document(lifters_on_platform)
+lifters_on_platform_design_doc = local_db.create_document(lifters_on_platform)
 
 
 
@@ -133,7 +133,7 @@ lifters_on_platform_ddoc = local_db.create_document(lifters_on_platform)
 
 
 def get_platform_lifters():
-    return local_db.get_view_result(lifters_on_platform_ddoc["_id"],
+    return local_db.get_view_result(lifters_on_platform_design_doc["_id"],
                                     "platform-lifters",
                                     include_docs=True)
 
