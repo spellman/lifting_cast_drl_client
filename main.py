@@ -70,6 +70,7 @@ print("Day {day} of the meet:\n    Meet ID: {meet}\n    Password: {pw}\nPlatform
 # BBQ meet
 # username: myvrzp8l3bty
 # password: xm4sj4ms
+# platform_id: pjspmhobe9kh
 
 
 
@@ -101,6 +102,8 @@ pp.pprint(replication_doc)
 
 
 # Make a view of the lifters on this platform
+
+# platform_id = "pjspmhobe9kh"
 
 lifters_on_platform = {
     "_id": "_design/platformLifters",
