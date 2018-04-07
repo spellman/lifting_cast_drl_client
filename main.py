@@ -1,6 +1,10 @@
 import sys
 import argparse
 import pprint
+from enum import Enum
+from collections import namedtuple
+from sortedcontainers import SortedListWithKey
+from numbers import Number
 
 try:
     from cloudant.client import CouchDB
@@ -143,6 +147,24 @@ all_attempts_design_doc = local_db.create_document(all_attempts)
 
 
 
+class DocType(Enum):
+    ATTEMPT = "a"
+    DIVISION = "d"
+    ENTRY = "e"
+    LIFTER = "l"
+    MEET = "m"
+    PLATFORM = "p"
+    REF = "r"
+    RESTRICTED_LIFTER = "s"
+    RESTRICTED_MEET = "n"
+    WEIGHT_CLASS = "w"
+
+def doc_id(doc):
+    return doc["_id"]
+
+def is_doc_of_type(doc, doc_type):
+    return doc_id(doc)[:1] == doc_type.value
+
 def get_lifters_on_platform():
     return local_db.get_view_result(lifters_on_platform_design_doc["_id"],
                                     "lifters-on-platform",
@@ -152,4 +174,53 @@ def get_all_attempts():
     return local_db.get_view_result(all_attempts_design_doc["_id"],
                                     "all-attempts",
                                     include_docs=True)
+
+LifterAttempt = namedtuple("LifterAttempt", ["lifter", "attempt"])
+
+def get_all_lifter_attempts_on_platform(lifters_on_platform):
+    lifters_by_id = {l["id"]: l["doc"] for l in lifters_on_platform}
+    attempts_with_weights = [a for a in get_all_attempts() if "weight" in a["doc"] and isinstance(a["doc"]["weight"], Number) and a["doc"]["weight"] > 0]
+    return [LifterAttempt(lifters_by_id[a["doc"]["lifterId"]], a["doc"]) for a in attempts_with_weights if lifters_by_id[a["doc"]["lifterId"]] is not None]
+
+def lift_order(lift_name):
+    # The return values here are not important. Only the order of the return
+    # values is important. Since key-functions seems to be the Python 3 way of
+    # sorting, as opposed to comparators, then I'm assuming numbers are ordered
+    # in the usual way.
+    if lift_name == "squat":
+        return 0
+    elif lift_name == "bench":
+        return 1
+    elif lift_name == "dead":
+        return 2
+    else:
+        raise ValueError("Function argument lift_name was expected to be \"squat\", \"bench\", or \"dead\" but \"{}\" was received".format(lift_name))
+
+def lifting_order(lifter_attempt):
+    # The key endOfRound was added since the 2018 A&M BBQ meet, which we're
+    # using in testing. The (constant) default value is for backwards
+    # compatibility to that meet.
+    l = lifter_attempt.lifter
+    a = lifter_attempt.attempt
+    return [l["session"],
+            lift_order(a["liftName"]),
+            l["flight"],
+            a["attemptNumber"],
+            a.get("endOfRound", 0),
+            a["weight"],
+            l["lot"]]
+
+def sort_lifter_attempts(lifter_attempts):
+    return SortedListWithKey(lifter_attempts, key=lifting_order)
+
+
+
+# print(tabulate([[x.lifter["session"],
+#                  x.attempt["liftName"],
+#                  x.lifter["flight"],
+#                  x.attempt["attemptNumber"],
+#                  x.attempt["weight"],
+#                  x.lifter["lot"]] for x in slas],
+#                 headers=["Session", "Lift Order", "Flight", "Attempt #", "End Of Round", "Weight", "Lot #"],
+#                 tablefmt='orgtbl'))
 
