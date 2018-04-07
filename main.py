@@ -115,10 +115,14 @@ else:
 # platform_id = "pjspmhobe9kh"
 
 lifters_on_platform = {
-    "_id": "_design/platformLifters",
+    "_id": "_design/liftersOnPlatform",
     "views": {
-        "platform-lifters": {
-            "map": "function (doc) {{\n  if (doc._id.substr(0, 1) === \"l\" && doc.platformId === \"{platform}\")\n  emit(doc._id, doc);\n}}".format(platform=platform_id)
+        "lifters-on-platform": {
+            "map": "function (doc) {{\n  if (doc._id.substr(0, 1) === \"l\" && doc.platformId === \"{platform}\")\n  emit(doc._id);\n}}".format(platform=platform_id)
+        }
+    },
+    "language": "javascript"
+}
         }
     },
     "language": "javascript"
@@ -132,8 +136,8 @@ lifters_on_platform_design_doc = local_db.create_document(lifters_on_platform)
 
 
 
-def get_platform_lifters():
+def get_lifters_on_platform():
     return local_db.get_view_result(lifters_on_platform_design_doc["_id"],
-                                    "platform-lifters",
+                                    "lifters-on-platform",
                                     include_docs=True)
 
