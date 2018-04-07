@@ -123,12 +123,19 @@ lifters_on_platform = {
     },
     "language": "javascript"
 }
+
+all_attempts = {
+    "_id": "_design/allAttempts",
+    "views": {
+        "all-attempts": {
+            "map": "function (doc) {\n  if (doc._id.substr(0, 1) === \"a\")\n  emit(doc._id);\n}"
         }
     },
     "language": "javascript"
 }
 
 lifters_on_platform_design_doc = local_db.create_document(lifters_on_platform)
+all_attempts_design_doc = local_db.create_document(all_attempts)
 
 
 
@@ -139,5 +146,10 @@ lifters_on_platform_design_doc = local_db.create_document(lifters_on_platform)
 def get_lifters_on_platform():
     return local_db.get_view_result(lifters_on_platform_design_doc["_id"],
                                     "lifters-on-platform",
+                                    include_docs=True)
+
+def get_all_attempts():
+    return local_db.get_view_result(all_attempts_design_doc["_id"],
+                                    "all-attempts",
                                     include_docs=True)
 
