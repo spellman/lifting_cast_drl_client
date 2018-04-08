@@ -177,10 +177,21 @@ def get_all_attempts():
 
 LifterAttempt = namedtuple("LifterAttempt", ["lifter", "attempt"])
 
-def get_all_lifter_attempts_on_platform(lifters_on_platform):
+def get_lifter_attempts_for_platform_lifting_order():
+    lifters_on_platform = get_lifters_on_platform()
     lifters_by_id = {l["id"]: l["doc"] for l in lifters_on_platform}
-    attempts_with_weights = [a for a in get_all_attempts() if "weight" in a["doc"] and isinstance(a["doc"]["weight"], Number) and a["doc"]["weight"] > 0]
-    return [LifterAttempt(lifters_by_id.get(a["doc"]["lifterId"]), a["doc"]) for a in attempts_with_weights if lifters_by_id.get(a["doc"]["lifterId"]) is not None]
+
+    attempts = get_all_attempts()
+    lifter_attempts = [LifterAttempt(lifters_by_id.get(a["doc"]["lifterId"]), a["doc"]) for a in attempts]
+    # Remove lifter_attempts for lifters not on this platform and attempts
+    # without weights or with non-Numeric or non-positive weights.
+    attempt_lifters_in_the_lifting_order = [la for la in lifter_attempts if (
+        la.lifter is not None and
+        "weight" in la.attempt and
+        isinstance(la.attempt["weight"], Number) and
+        la.attempt["weight"] > 0
+    )]
+    return attempt_lifters_in_the_lifting_order
 
 def lift_order(lift_name):
     # The return values here are not important. Only the order of the return
