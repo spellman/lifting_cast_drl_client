@@ -341,7 +341,11 @@ def make_attempt_result_key(attempt):
 def attempts_to_display_attempts(attempts):
     attempt_weights = {make_attempt_weight_key(attempt): attempt.get("weight") for attempt in attempts}
     attempt_results = {make_attempt_result_key(attempt): attempt.get("result") for attempt in attempts}
-    return {**attempt_weights, **attempt_results}
+
+    result = {}
+    result.update(attempt_weights)
+    result.update(attempt_results)
+    return result
 
 
 
@@ -372,14 +376,14 @@ def update_display_data(lifter, current_attempt, attempts_for_lifter):
       "deadlift_3_result": null
     }
     """
+    new_display_data = {}
+    new_display_data.update(lifter_to_display_lifter(lifter))
+    new_display_data.update(current_attempt_to_display_current_attempt(current_attempt))
+    new_display_data.update(attempts_to_display_attempts(attempts_for_lifter))
+
     # w+ open mode should open the file for overwriting its contents, creating
     # the file if it doesn't exist.
     with open(output_file, "w+") as f:
-        new_display_data = {
-            **lifter_to_display_lifter(lifter),
-            **current_attempt_to_display_current_attempt(current_attempt),
-            **attempts_to_display_attempts(attempts_for_lifter)
-        }
         f.seek(0)
         json.dump(new_display_data, f)
 
