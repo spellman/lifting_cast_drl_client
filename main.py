@@ -4,7 +4,6 @@ import pprint
 from enum import Enum
 import json
 from collections import namedtuple
-from sortedcontainers import SortedListWithKey
 from numbers import Number
 import datetime
 
@@ -243,7 +242,7 @@ def lifting_order(lifter_attempt):
             l["lot"]]
 
 def sort_lifter_attempts(lifter_attempts):
-    return SortedListWithKey(lifter_attempts, key=lifting_order)
+    return sorted(lifter_attempts, key=lifting_order)
 
 def get_lifting_order():
     return sort_lifter_attempts(get_lifter_attempts_for_platform_lifting_order())
