@@ -331,9 +331,17 @@ def current_attempt_to_display_current_attempt(current_attempt):
     return {"current_lift": display_lift_name(current_attempt),
             "current_attempt_number": current_attempt["attemptNumber"]}
 
+def make_attempt_weight_key(attempt):
+    return "{lift_name}_{attempt_number}_weight".format(lift_name=display_lift_name(attempt),
+                                                        attempt_number=attempt["attemptNumber"])
+
+def make_attempt_result_key(attempt):
+    return "{lift_name}_{attempt_number}_result".format(lift_name=display_lift_name(attempt),
+                                                        attempt_number=attempt["attemptNumber"])
+
 def attempts_to_display_attempts(attempts):
-    attempt_weights = {"{lift_name}_{attempt_number}_weight".format(lift_name=display_lift_name(attempt), attempt_number=attempt["attemptNumber"]): attempt.get("weight") for attempt in attempts}
-    attempt_results = {"{lift_name}_{attempt_number}_result".format(lift_name=display_lift_name(attempt), attempt_number=attempt["attemptNumber"]): attempt.get("result") for attempt in attempts}
+    attempt_weights = {make_attempt_weight_key(attempt): attempt.get("weight") for attempt in attempts}
+    attempt_results = {make_attempt_result_key(attempt): attempt.get("result") for attempt in attempts}
     return {**attempt_weights, **attempt_results}
 
 
