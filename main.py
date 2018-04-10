@@ -339,8 +339,34 @@ def attempts_to_display_attempts(attempts):
 
 
 def update_display_data(lifter, current_attempt, attempts_for_lifter):
-    # w+ mode should open the file for overwriting its contents, creating the
-    # file if it doesn't exist.
+    """The output file is a JSON file of the form
+    {
+      "name": "Tony Cardella",
+      "team_name": "USA",
+      "current_lift": "deadlift",
+      "current_attempt_number": "2",
+      "squat_1_weight": 357.5,
+      "squat_1_result": "good",
+      "squat_2_weight": 375.0,
+      "squat_2_result": "good",
+      "squat_3_weight": 390.0,
+      "squat_3_result": "good",
+      "bench_1_weight": 255.0,
+      "bench_1_result": "good",
+      "bench_2_weight": 265.0,
+      "bench_2_result": "good",
+      "bench_3_weight": 272.5,
+      "bench_3_result": "bad",
+      "deadlift_1_weight": 330.0,
+      "deadlift_1_result": "good",
+      "deadlift_2_weight": 355.0,
+      "deadlift_2_result": null,
+      "deadlift_3_weight": null,
+      "deadlift_3_result": null
+    }
+    """
+    # w+ open mode should open the file for overwriting its contents, creating
+    # the file if it doesn't exist.
     with open(output_file, "w+") as f:
         new_display_data = {
             **lifter_to_display_lifter(lifter),
