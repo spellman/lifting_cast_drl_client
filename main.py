@@ -36,7 +36,7 @@ parser = argparse.ArgumentParser(description="Set up continuous pull replication
 parser.add_argument("-d", "--day-number", dest="day_number",
                     type=int,
                     required=True,
-                    help="The platform ID")
+                    help="The day number within 2018 Collegiate Nationals: 1 for Thursday, 2 for Friday, 3 for Saturday, 4 for Sunday")
 
 parser.add_argument("-p", "--platform-id", dest="platform_id",
                     required=True,
@@ -44,7 +44,7 @@ parser.add_argument("-p", "--platform-id", dest="platform_id",
 
 parser.add_argument("-o", "--output-file", dest="output_file",
                     required=True,
-                    help="The platform ID")
+                    help="The file to which this script will write current lifter data and which DRL will read in.")
 
 args = parser.parse_args()
 day_number = args.day_number
