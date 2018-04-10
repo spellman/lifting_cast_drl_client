@@ -39,7 +39,7 @@ parser.add_argument("-p", "--platform-id", dest="platform_id",
                     help="The platform ID")
 
 parser.add_argument("-o", "--output-file", dest="output_file",
-                    required=False, default="~/drl-input.json",
+                    required=True,
                     help="The platform ID")
 
 args = parser.parse_args()
