@@ -3,7 +3,7 @@ import argparse
 import pprint
 from enum import Enum
 import json
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 from numbers import Number
 import datetime
 
@@ -317,7 +317,10 @@ def is_change_to_some_attempt_of_current_lifter(change):
 
 
 def lifter_to_display_lifter(lifter):
-    return {"name": lifter["name"], "team_name": lifter["team"]}
+    return OrderedDict([
+        ("name", lifter["name"]),
+        ("team_name", lifter["team"])
+    ])
 
 lift_names_to_display_lift_names = {"squat": "squat",
                                     "bench": "bench",
@@ -327,8 +330,10 @@ def display_lift_name(attempt):
     return lift_names_to_display_lift_names.get(attempt["liftName"]);
 
 def current_attempt_to_display_current_attempt(current_attempt):
-    return {"current_lift": display_lift_name(current_attempt),
-            "current_attempt_number": current_attempt["attemptNumber"]}
+    return OrderedDict([
+        ("current_lift", display_lift_name(current_attempt)),
+        ("current_attempt_number", current_attempt["attemptNumber"])
+    ])
 
 def make_attempt_weight_key(attempt):
     return "{lift_name}_{attempt_number}_weight".format(lift_name=display_lift_name(attempt),
@@ -342,9 +347,25 @@ def attempts_to_display_attempts(attempts):
     attempt_weights = {make_attempt_weight_key(attempt): attempt.get("weight") for attempt in attempts}
     attempt_results = {make_attempt_result_key(attempt): attempt.get("result") for attempt in attempts}
 
-    result = {}
-    result.update(attempt_weights)
-    result.update(attempt_results)
+    result = OrderedDict()
+    result["squat_1_weight"] = attempt_weights["squat_1_weight"]
+    result["squat_1_result"] = attempt_results["squat_1_result"]
+    result["squat_2_weight"] = attempt_weights["squat_2_weight"]
+    result["squat_2_result"] = attempt_results["squat_2_result"]
+    result["squat_3_weight"] = attempt_weights["squat_3_weight"]
+    result["squat_3_result"] = attempt_results["squat_3_result"]
+    result["bench_1_weight"] = attempt_weights["bench_1_weight"]
+    result["bench_1_result"] = attempt_results["bench_1_result"]
+    result["bench_2_weight"] = attempt_weights["bench_2_weight"]
+    result["bench_2_result"] = attempt_results["bench_2_result"]
+    result["bench_3_weight"] = attempt_weights["bench_3_weight"]
+    result["bench_3_result"] = attempt_results["bench_3_result"]
+    result["deadlift_1_weight"] = attempt_weights["deadlift_1_weight"]
+    result["deadlift_1_result"] = attempt_results["deadlift_1_result"]
+    result["deadlift_2_weight"] = attempt_weights["deadlift_2_weight"]
+    result["deadlift_2_result"] = attempt_results["deadlift_2_result"]
+    result["deadlift_3_weight"] = attempt_weights["deadlift_3_weight"]
+    result["deadlift_3_result"] = attempt_results["deadlift_3_result"]
     return result
 
 
@@ -376,7 +397,7 @@ def update_display_data(lifter, current_attempt, attempts_for_lifter):
       "deadlift_3_result": null
     }
     """
-    new_display_data = {}
+    new_display_data = OrderedDict()
     new_display_data.update(lifter_to_display_lifter(lifter))
     new_display_data.update(current_attempt_to_display_current_attempt(current_attempt))
     new_display_data.update(attempts_to_display_attempts(attempts_for_lifter))
@@ -385,7 +406,7 @@ def update_display_data(lifter, current_attempt, attempts_for_lifter):
     # the file if it doesn't exist.
     with open(output_file, "w+") as f:
         f.seek(0)
-        json.dump(new_display_data, f)
+        json.dump(new_display_data, f, indent=4)
 
 
 
