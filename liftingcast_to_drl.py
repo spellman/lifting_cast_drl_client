@@ -410,6 +410,14 @@ def update_display_data(lifter, current_attempt, attempts_for_lifter):
 
 
 
+# Init output file with current attempt if there is one.
+if is_valid_attempt_for_lifting_order(current_attempt):
+    update_display_data(get_current_lifter(),
+                        current_attempt,
+                        get_all_attempts_for_lifter(current_lifter_id()))
+
+
+
 # style="main_only" => Only "winning" revisions are selected from the _changes
 #   feed; no conflicts or deleted former-conflicts.
 changes = local_db.infinite_changes(since="now",
