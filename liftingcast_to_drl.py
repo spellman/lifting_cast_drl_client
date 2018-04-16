@@ -254,15 +254,6 @@ def get_lifting_order_to_be_done():
     return get_attempts_to_be_done(get_lifting_order())
 
 
-# import tabulate from tabulate
-# print(tabulate([[x.lifter["session"],
-#                  x.attempt["liftName"],
-#                  x.lifter["flight"],
-#                  x.attempt["attemptNumber"],
-#                  x.attempt["weight"],
-#                  x.lifter["lot"]] for x in slas],
-#                 headers=["Session", "Lift Order", "Flight", "Attempt #", "End Of Round", "Weight", "Lot #"],
-#                 tablefmt='orgtbl'))
 
 def get_all_attempts_for_lifter(lifter_id):
     return [a["doc"] for a in get_all_attempts() if a["doc"]["lifterId"] == lifter_id]
