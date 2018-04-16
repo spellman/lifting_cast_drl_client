@@ -68,6 +68,7 @@ password = "xm4sj4ms"
 
 
 print "Day {day} of the meet:\n    Meet ID: {meet}\n    Password: {pw}\nPlatform ID: {platform}\nDisplay data will be continually written to the file {out}\n  DRL should read in that file when it changes.".format(day=day_number, meet=meet_id, pw=password, platform=platform_id, out=output_file)
+print "\n{}  Started\n".format(timestamp())
 
 
 
@@ -151,6 +152,7 @@ all_attempts = {
 lifters_on_platform_design_doc = local_db.create_document(lifters_on_platform)
 all_attempts_design_doc = local_db.create_document(all_attempts)
 
+print "{}  lifters_on_platform and all_attempts views exist".format(timestamp())
 
 
 
@@ -422,6 +424,8 @@ changes = local_db.infinite_changes(since="now",
                                     heartbeat=10000,
                                     include_docs=True,
                                     style="main_only")
+
+print "{timestamp}  {output_file} will be continually updated with display data for DRL to read in:\n".format(timestamp=timestamp(), output_file=output_file)
 
 for change in changes:
     if is_heartbeat(change):
