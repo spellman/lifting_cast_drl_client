@@ -109,13 +109,13 @@ def is_our_meet_replication(replication_doc):
 rep = cloudant.replicator.Replicator(local_client)
 
 if any(is_our_meet_replication(d) for d in rep.list_replications()):
-    print "Meet is already being replicated from liftingcast.com to our local CouchDB."
+    print "{}  Meet is already being replicated from liftingcast.com to our local CouchDB.".format(timestamp())
 else:
     replication_doc = rep.create_replication(source_db=liftingcast_db, target_db=local_db, continuous=True)
 
-    print "Replication created."
+    print "{}  Replication created.".format(timestamp())
     print "You can manage the replication from the Fauxton admin panel at http://127.0.0.1:5984/_utils/#/replication"
-    print "For reference or Curl actions, the replication doc is"
+    print "For reference, use with Curl, etc., the replication doc is"
     pp.pprint(replication_doc)
 
 
