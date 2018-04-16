@@ -14,9 +14,9 @@ try:
     import cloudant
     from cloudant import replicator
 except:
-    print("cloudant is required. Please install it by running")
-    print("sudo pip install cloudant")
-    print("and then run this script again.")
+    print "cloudant is required. Please install it by running"
+    print "sudo pip install cloudant"
+    print "and then run this script again."
 
 
 
@@ -60,7 +60,7 @@ password = "xm4sj4ms"
 
 
 
-print("Day {day} of the meet:\n    Meet ID: {meet}\n    Password: {pw}\nPlatform ID: {platform}\nDisplay data will be continually written to the file {out}\n  DRL should read in that file when it changes.".format(day=day_number, meet=meet_id, pw=password, platform=platform_id, out=output_file))
+print "Day {day} of the meet:\n    Meet ID: {meet}\n    Password: {pw}\nPlatform ID: {platform}\nDisplay data will be continually written to the file {out}\n  DRL should read in that file when it changes.".format(day=day_number, meet=meet_id, pw=password, platform=platform_id, out=output_file)
 
 
 
@@ -102,13 +102,13 @@ def is_our_meet_replication(replication_doc):
 rep = cloudant.replicator.Replicator(local_client)
 
 if any(is_our_meet_replication(d) for d in rep.list_replications()):
-    print("Meet is already being replicated from liftingcast.com to our local CouchDB.")
+    print "Meet is already being replicated from liftingcast.com to our local CouchDB."
 else:
     replication_doc = rep.create_replication(source_db=liftingcast_db, target_db=local_db, continuous=True)
 
-    print("Replication created.")
-    print("You can manage the replication from the Fauxton admin panel at http://127.0.0.1:5984/_utils/#/replication")
-    print("For reference or Curl actions, the replication doc is")
+    print "Replication created."
+    print "You can manage the replication from the Fauxton admin panel at http://127.0.0.1:5984/_utils/#/replication"
+    print "For reference or Curl actions, the replication doc is"
     pp.pprint(replication_doc)
 
 
@@ -427,17 +427,17 @@ changes = local_db.infinite_changes(since="now",
 
 for change in changes:
     if is_heartbeat(change):
-        print("{timestamp} heartbeat -- still connected to db _changes feed".format(timestamp=datetime.datetime.now().replace(microsecond=0).isoformat()))
-        print("current attempt")
+        print "{timestamp} heartbeat -- still connected to db _changes feed".format(timestamp=datetime.datetime.now().replace(microsecond=0).isoformat())
+        print "current attempt"
         pp.pprint(current_attempt)
-        print("\n")
+        print "\n"
 
 
 
     elif is_different_attempt(change):
-        print("\"Current attempt\" set to different attempt")
+        print "\"Current attempt\" set to different attempt"
         pp.pprint(change)
-        print("\n")
+        print "\n"
 
         # Is this hitting the db or just a cache? We need it up-to-date.
         new_current_attempt_id = change["doc"]["currentAttemptId"]
@@ -452,9 +452,9 @@ for change in changes:
 
 
     elif is_first_decision_on_current_attempt(change):
-        print("Decision on current attempt")
+        print "Decision on current attempt"
         pp.pprint(change)
-        print("\n")
+        print "\n"
 
         next_lifter_attempt = get_next_lifter()
         if next_lifter_attempt:
@@ -471,9 +471,9 @@ for change in changes:
 
 
     elif is_change_to_current_lifter(change):
-        print("Change to current lifter")
+        print "Change to current lifter"
         pp.pprint(change)
-        print("\n")
+        print "\n"
 
         update_display_data(get_current_lifter(),
                             current_attempt,
@@ -482,9 +482,9 @@ for change in changes:
 
 
     elif is_change_to_some_attempt_of_current_lifter(change):
-        print("Change to some attempt of current lifter")
+        print "Change to some attempt of current lifter"
         pp.pprint(change)
-        print("\n")
+        print "\n"
 
         if is_valid_attempt_for_lifting_order(change["doc"]):
             update_display_data(get_current_lifter(),
@@ -494,9 +494,9 @@ for change in changes:
 
 
     else:
-        print("Unhandled change")
+        print "Unhandled change"
         pp.pprint(change)
-        print("\n")
+        print "\n"
 
 # for change in changes:
 #     pp.pprint(change)
