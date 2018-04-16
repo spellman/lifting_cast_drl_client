@@ -22,6 +22,11 @@ except:
 
 
 
+def timestamp():
+    return datetime.datetime.now().replace(microsecond=0).isoformat()
+
+
+
 pp = pprint.PrettyPrinter(indent=4)
 
 
@@ -420,7 +425,7 @@ changes = local_db.infinite_changes(since="now",
 
 for change in changes:
     if is_heartbeat(change):
-        print "{timestamp} heartbeat -- still connected to db _changes feed".format(timestamp=datetime.datetime.now().replace(microsecond=0).isoformat())
+        print "{}  heartbeat -- still connected to db _changes feed".format(timestamp())
         print "current attempt"
         pp.pprint(current_attempt)
         print "\n"
