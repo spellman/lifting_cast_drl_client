@@ -8,6 +8,7 @@ import json
 from collections import namedtuple, OrderedDict
 from numbers import Number
 import datetime
+from time import sleep
 
 
 
@@ -156,14 +157,25 @@ print "{}  lifters_on_platform and all_attempts views exist".format(timestamp())
 
 
 
+print "{}  Initializing platform and current attempt...".format(timestamp())
+
+while True:
+    try:
+        initial_platform = local_db[platform_id]
+
+        if initial_platform["currentAttemptId"]:
+            current_attempt = local_db[initial_platform["currentAttemptId"]]
+        else:
+            current_attempt = {}
+
+        break
+    except KeyError:
+        print "{}  Waiting for platform and current attempt docs to sync to local database...".format(timestamp())
+        sleep(5)
+
+print "{}  Initialized platform and current attempt.\n\n".format(timestamp())
 
 
-
-initial_platform = local_db[platform_id]
-if initial_platform["currentAttemptId"]:
-    current_attempt = local_db[initial_platform["currentAttemptId"]]
-else:
-    current_attempt = {}
 
 def current_attempt_id():
     return current_attempt.get("_id")
