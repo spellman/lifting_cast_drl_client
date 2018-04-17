@@ -1,7 +1,56 @@
-import argparse
-import pprint
-import json
+# THIS IS *NOT* A SCRIPT TO BE RUN. This is a collection of functions to be used
+# by drl or copied into drl.
+
+# If the functions are copied, then be sure to add the imports to any files in
+# which the modules are used.
+
+import traceback
 import datetime
+
+try:
+    from cloudant.client import CouchDB
+except:
+    print traceback.format_exc()
+    print "Missing depedencies. Connect to the internet and install them by running"
+    print "    sudo pip install -r requirements.txt"
+    print "Then run this script again."
+
+
+
+
+
+
+
+def timestamp():
+    return datetime.datetime.now().replace(microsecond=0).isoformat()
+
+
+
+# TODO: Platform ID and display-data file are shared between the two scripts so
+# they should read in from a single file.
+PLATFORM_ID = "pjspmhobe9kh"
+
+# Set up meet ID and password for CouchDB database.
+
+# TODO: There should be a function from the day the script is run to the meet ID and password for the meet (i.e., the database) for that day.
+MEET_ID = "myvrzp8l3bty"
+PASSWORD = "xm4sj4ms"
+
+
+
+
+# Set up liftingcast client and database
+
+liftingcast_client = CouchDB(MEET_ID,
+                             PASSWORD,
+                             url="http://couchdb.liftingcast.com",
+                             connect=True,
+                             auto_renew=True)
+liftingcast_db = liftingcast_client[MEET_ID]
+
+
+
+
 
 
 
@@ -118,6 +167,8 @@ def empty_decisions():
         }
     }
 
+# MAKE SURE decisions IS INITIALIZED IN THE CODE BEFORE ANY FUNCTIONS THAT
+# USE IT ARE CALLED.
 # decisions holds the decision data for an attempt:
 # * To be written into the ref documents
 # * After a delay to be written into the attempt document
@@ -130,25 +181,20 @@ decisions = empty_decisions()
 
 
 def get_referee_docs():
-    return {"left": local_db["rleft-{}".format(platform_id)],
-            "head": local_db["rhead-{}".format(platform_id)],
-            "right": local_db["rright-{}".format(platform_id)]}
+    return {"left": liftingcast_db["rleft-{}".format(PLATFORM_ID)],
+            "head": liftingcast_db["rhead-{}".format(PLATFORM_ID)],
+            "right": liftingcast_db["rright-{}".format(PLATFORM_ID)]}
 
 def common_change_data(doc):
     return {"rev": doc["_rev"],
             "timeStamp": datetime.datetime.now().replace(microsecond=0).isoformat()}
 
-def liftingcast_decision_to_referee_changes_decision(decision, referee_doc):
-    return common_change_data(referee_doc).update({
-        "attribute": "decision",
-        "value": decision
+def liftingcast_attribute_to_changes_attribute(attribute_name, attribute_value, doc):
+    return common_change_data(doc).update({
+        "attribute": attribute_name,
+        "value": attribute_value
     })
 
-def liftingcast_cards_to_referee_changes_cards(cards, referee_doc):
-    return common_change_data(referee_doc).update({
-        "attribute": "cards",
-        "value": cards
-    })
 
 def truncate_changes(changes_list):
     return changes_list[:100]
@@ -191,24 +237,24 @@ def update_decisions_in_liftingcast():
         referee["cards"] = cards
         referee["decision"] = decision
         changes = [
-            liftingcast_decision_to_referee_changes_decision(decision, referee),
-            liftingcast_cards_to_referee_changes_cards(cards, referee)
+            liftingcast_attribute_to_changes_attribute("decision", decision, referee),
+            liftingcast_attribute_to_changes_attribute("cards", cards, referee)
         ] + referee["changes"]
         referee["changes"] = truncate_changes(changes)
         referee.save()
 
 def record_decisions_and_advance_lifter_in_liftingcast(next_attempt_id,
                                                        drl_clock_value_in_milliseconds):
-    platform = local_db[platform_id]
-    attempt = local_db[platform["currentAttemptId"]]
+    platform = liftingcast_db[PLATFORM_ID]
+    attempt = liftingcast_db[platform["currentAttemptId"]]
 
     result = liftingcast_decisions_to_result(decisions)
 
     attempt["decisions"] = decisions
     attempt["result"] = result
     changes = [
-        liftingcast_result_to_attempt_changes_result(result, attempt),
-        liftingcast_decisions_to_attempt_changes_decisions(decisions, attempt)
+        liftingcast_attribute_to_changes_attribute("result", result, attempt),
+        liftingcast_attribute_to_changes_attribute("decisions", decisions, attempt)
     ] + attempt["changes"]
     attempt["changes"] = truncate_changes(changes)
     attempt.save()
@@ -222,13 +268,13 @@ def record_decisions_and_advance_lifter_in_liftingcast(next_attempt_id,
     platform.save()
 
 def set_liftingcast_clock(drl_clock_value_in_milliseconds):
-    platform = local_db[platform_id]
+    platform = liftingcast_db[PLATFORM_ID]
     platform["clockState"] = "initial"
     platform["clockTimerLength"] = drl_clock_value_in_milliseconds
     platform.save()
 
 def start_liftingcast_clock():
-    platform = local_db[platform_id]
+    platform = liftingcast_db[PLATFORM_ID]
     platform["clockState"] = "started"
     platform.save()
 
