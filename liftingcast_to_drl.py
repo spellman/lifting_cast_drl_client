@@ -3,7 +3,7 @@
 import sys
 import argparse
 import pprint
-from enum import Enum
+import traceback
 import json
 from collections import namedtuple, OrderedDict
 from numbers import Number
@@ -16,10 +16,12 @@ try:
     from cloudant.client import CouchDB
     import cloudant
     from cloudant import replicator
+    from enum import Enum
 except:
-    print "cloudant is required. Please install it by running"
-    print "sudo pip install cloudant"
-    print "and then run this script again."
+    print traceback.format_exc()
+    print "Missing depedencies. Connect to the internet and install them by running"
+    print "    sudo pip install -r requirements.txt"
+    print "Then run this script again."
 
 
 
