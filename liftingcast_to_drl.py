@@ -25,12 +25,18 @@ except:
 
 
 
+
+
+
+
+pp = pprint.PrettyPrinter(indent=4)
+
 def timestamp():
     return datetime.datetime.now().replace(microsecond=0).isoformat()
 
 
 
-pp = pprint.PrettyPrinter(indent=4)
+
 
 
 
@@ -513,6 +519,3 @@ for change in changes:
         print "Unhandled change"
         pp.pprint(change)
         print "\n"
-
-# for change in changes:
-#     pp.pprint(change)
