@@ -60,23 +60,27 @@ parser.add_argument("-o", "--output-file", dest="output_file",
                     required=True,
                     help="The file to which this script will write current lifter data and which DRL will read in.")
 
-args = parser.parse_args()
-day_number = args.day_number
-platform_id = args.platform_id
-output_file = args.output_file
+ARGS = parser.parse_args()
+DAY_NUMBER = ARGS.day_number
+PLATFORM_ID = ARGS.platform_id
+OUTPUT_FILE = ARGS.output_file
 
 
 
 # Set up meet ID and password for CouchDB database.
 
 # TODO: There should be a function from the day the script is run to the meet ID and password for the meet (i.e., the database) for that day.
-meet_id = "myvrzp8l3bty"
-password = "xm4sj4ms"
+MEET_ID = "myvrzp8l3bty"
+PASSWORD = "xm4sj4ms"
 
 
 
 print "\n{}  Started\n".format(timestamp())
-print "Day {day_number} of the meet:\n    Meet ID: {meet_id}\n    Password: {password}\nPlatform ID: {platform_id}\nOutput file: {output_file}\n".format(day_number=day_number, meet_id=meet_id, password=password, platform_id=platform_id, output_file=output_file)
+print "Day {day_number} of the meet:\n    Meet ID: {meet_id}\n    Password: {password}\nPlatform ID: {platform_id}\nOutput file: {output_file}\n".format(day_number=DAY_NUMBER,
+                                                                                                                                                         meet_id=MEET_ID,
+                                                                                                                                                         password=PASSWORD,
+                                                                                                                                                         platform_id=PLATFORM_ID,
+                                                                                                                                                         output_file=OUTPUT_FILE)
 
 
 
@@ -96,18 +100,27 @@ print "Day {day_number} of the meet:\n    Meet ID: {meet_id}\n    Password: {pas
 
 # BBQ meet
 # username: myvrzp8l3bty
-# password: xm4sj4ms
-# platform_id: pjspmhobe9kh
+# PASSWORD: xm4sj4ms
+# PLATFORM_ID: pjspmhobe9kh
 
 
 
-liftingcast_client = CouchDB(meet_id, password, url="http://couchdb.liftingcast.com", connect=True, auto_renew=True)
-liftingcast_db = liftingcast_client.create_database(meet_id)
+liftingcast_client = CouchDB(MEET_ID,
+                             PASSWORD,
+                             url="http://couchdb.liftingcast.com",
+                             connect=True,
+                             auto_renew=True)
+liftingcast_db = liftingcast_client.create_database(MEET_ID)
 
-local_client = CouchDB("", "", admin_party=True, url="http://127.0.0.1:5984", connect=True, auto_renew=True)
+local_client = CouchDB("",
+                       "",
+                       admin_party=True,
+                       url="http://127.0.0.1:5984",
+                       connect=True,
+                       auto_renew=True)
 local_client.create_database("_replicator")
 local_client.create_database("_global_changes")
-local_db = local_client.create_database(meet_id)
+local_db = local_client.create_database(MEET_ID)
 
 
 
@@ -120,7 +133,9 @@ rep = cloudant.replicator.Replicator(local_client)
 if any(is_our_meet_replication(d) for d in rep.list_replications()):
     print "{}  Meet is already being replicated from liftingcast.com to our local CouchDB.".format(timestamp())
 else:
-    replication_doc = rep.create_replication(source_db=liftingcast_db, target_db=local_db, continuous=True)
+    replication_doc = rep.create_replication(source_db=liftingcast_db,
+                                             target_db=local_db,
+                                             continuous=True)
 
     print "{}  Replication created.".format(timestamp())
     print "You can manage the replication from the Fauxton admin panel at http://127.0.0.1:5984/_utils/#/replication"
@@ -135,13 +150,13 @@ else:
 
 # Make a view of the lifters on this platform
 
-# platform_id = "pjspmhobe9kh"
+# PLATFORM_ID = "pjspmhobe9kh"
 
 lifters_on_platform = {
     "_id": "_design/liftersOnPlatform",
     "views": {
         "lifters-on-platform": {
-            "map": "function (doc) {{\n  if (doc._id.substr(0, 1) === \"l\" && doc.platformId === \"{platform}\")\n  emit(doc._id);\n}}".format(platform=platform_id)
+            "map": "function (doc) {{\n  if (doc._id.substr(0, 1) === \"l\" && doc.platformId === \"{platform}\")\n  emit(doc._id);\n}}".format(platform=PLATFORM_ID)
         }
     },
     "language": "javascript"
@@ -168,7 +183,7 @@ print "{}  Initializing platform and current attempt...".format(timestamp())
 
 while True:
     try:
-        initial_platform = local_db[platform_id]
+        initial_platform = local_db[PLATFORM_ID]
 
         if initial_platform["currentAttemptId"]:
             current_attempt = local_db[initial_platform["currentAttemptId"]]
@@ -423,7 +438,7 @@ def update_display_data(lifter, current_attempt, attempts_for_lifter):
 
     # w+ open mode should open the file for overwriting its contents, creating
     # the file if it doesn't exist.
-    with open(output_file, "w+") as f:
+    with open(OUTPUT_FILE, "w+") as f:
         f.seek(0)
         json.dump(new_display_data, f, indent=4)
 
@@ -444,7 +459,8 @@ changes = local_db.infinite_changes(since="now",
                                     include_docs=True,
                                     style="main_only")
 
-print "{timestamp}  {output_file} will be continually updated with display data for DRL to read in:\n".format(timestamp=timestamp(), output_file=output_file)
+print "{timestamp}  {output_file} will be continually updated with display data for DRL to read in:\n".format(timestamp=timestamp(),
+                                                                                                              output_file=OUTPUT_FILE)
 
 for change in changes:
     if is_heartbeat(change):
