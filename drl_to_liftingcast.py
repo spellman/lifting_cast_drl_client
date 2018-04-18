@@ -291,7 +291,7 @@ def set_decisions(left_white,
                                                        right_yellow)
 
 def update_decisions_in_liftingcast():
-    for position, referee in get_referee_docs():
+    for position, referee in get_referee_docs().iteritems():
         d = decisions[position]
         cards = d["cards"]
         decision = d["decision"]
