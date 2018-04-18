@@ -369,7 +369,7 @@ def is_change_to_current_attempt(doc):
 possible_lift_results = ["good", "bad"]
 
 def is_first_decision_on_attempt(doc):
-    decisions = [c for c in doc.get("changes", []) if c["attribute"] == "result" and c["value"] in possible_lift_results]
+    decisions = [c for c in doc.get("changes", []) if isinstance(c, dict) and c.get("attribute") == "result" and c.get("value") in possible_lift_results]
     return (len(decisions) == 1 and
             decisions[0]["value"] == doc["result"])
 
