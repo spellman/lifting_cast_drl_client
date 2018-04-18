@@ -21,8 +21,6 @@ except:
 
 
 
-def timestamp():
-    return datetime.datetime.now().replace(microsecond=0).isoformat()
 
 
 
@@ -51,6 +49,11 @@ liftingcast_db = liftingcast_client[MEET_ID]
 
 
 
+
+
+
+def timestamp():
+    return datetime.datetime.now().replace(microsecond=0).isoformat()
 
 
 
@@ -186,8 +189,7 @@ def get_referee_docs():
             "right": liftingcast_db["rright-{}".format(PLATFORM_ID)]}
 
 def common_change_data(doc):
-    return {"rev": doc["_rev"],
-            "timeStamp": datetime.datetime.now().replace(microsecond=0).isoformat()}
+    return {"rev": doc["_rev"], "timeStamp": timestamp()}
 
 def liftingcast_attribute_to_changes_attribute(attribute_name, attribute_value, doc):
     return common_change_data(doc).update({
