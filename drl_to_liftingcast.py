@@ -1,8 +1,5 @@
-# THIS IS *NOT* A SCRIPT TO BE RUN. This is a collection of functions to be used
-# by drl or copied into drl.
-
-# If the functions are copied, then be sure to add the imports to any files in
-# which the modules are used.
+# This is not a script to be run.
+# This is a library to be imported into and used by DRL.
 
 import sys
 import traceback
