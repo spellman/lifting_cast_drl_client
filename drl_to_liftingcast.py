@@ -4,6 +4,7 @@
 # If the functions are copied, then be sure to add the imports to any files in
 # which the modules are used.
 
+import sys
 import traceback
 import json
 import pprint
@@ -35,6 +36,7 @@ except IOError:
     print "Make a file called {} at top level of the project, containing only the platform ID for which this Raspberry Pi will be used.".format(PLATFORM_ID_FILE)
     print "Example {}:".format(PLATFORM_ID_FILE)
     print "pjspmhobe9kh"
+    sys.exit(1)
 
 
 
@@ -49,6 +51,7 @@ except IOError:
     print "2018 Collegiate Nationals, a 4-day event, is represented as 4 separate \"meets\" inliftingcast.com. The day number determines which of those \"meets\" is used."
     print "Example {}:".format(DAY_NUMBER_FILE)
     print 1
+    sys.exit(1)
 
 
 
@@ -74,6 +77,7 @@ except IOError:
         "4": {"meet_id": "NdwoWgdTK4gsH7w0",
               "password": "lQGIbdIeKljK1Tdv"}
     }))
+    sys.exit(1)
 
 
 
