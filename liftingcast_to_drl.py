@@ -504,7 +504,7 @@ def update_display_data(lifter, current_attempt):
 INITIAL_CLOCK_VALUE_IN_MILLISECONDS = 60000
 
 def advance_liftingcast_to_next_lifter(next_lifter_attempt):
-    if lifter_attempt is None:
+    if next_lifter_attempt is None:
         next_attempt_id = None
     else:
         next_attempt_id = doc_id(next_lifter_attempt.attempt)
