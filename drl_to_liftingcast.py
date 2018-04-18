@@ -52,7 +52,7 @@ except IOError:
 
 
 
-MEET_CREDENTIALS_FILE = "meet-credentials"
+MEET_CREDENTIALS_FILE = "meet-credentials.json"
 
 try:
     with open(MEET_CREDENTIALS_FILE, "r") as f:
