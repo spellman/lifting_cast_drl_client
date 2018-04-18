@@ -225,7 +225,7 @@ while True:
     try:
         initial_platform = local_db[PLATFORM_ID]
 
-        if initial_platform["currentAttemptId"]:
+        if initial_platform.get("currentAttemptId"):
             current_attempt = local_db[initial_platform["currentAttemptId"]]
         else:
             current_attempt = {}
