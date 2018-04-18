@@ -264,6 +264,7 @@ def set_decisions(left_white,
     assert are_valid_light_and_cards(head_white, head_red, head_blue, head_yellow)
     assert are_valid_light_and_cards(right_white, right_red, right_blue, right_yellow)
 
+    global decisions
     decisions = drl_decisions_to_liftingcast_decisions(left_white,
                                                        left_red,
                                                        left_blue,
@@ -334,6 +335,7 @@ def record_decisions_and_advance_lifter_in_liftingcast(next_attempt_id,
     attempt["changes"] = truncate_changes(changes)
     attempt.save()
 
+    global decisions
     decisions = empty_decisions()
     update_decisions_in_liftingcast()
 
