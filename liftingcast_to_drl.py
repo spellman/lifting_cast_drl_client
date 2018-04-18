@@ -473,14 +473,16 @@ def update_display_data(lifter, current_attempt):
     """
     if lifter is None:
         l = {}
+        a = {}
         all_attempts_for_lifter = []
     else:
         l = lifter
+        a = current_attempt
         all_attempts_for_lifter = get_all_attempts_for_lifter(doc_id(l))
 
     new_display_data = OrderedDict()
     new_display_data.update(lifter_to_display_lifter(l))
-    new_display_data.update(current_attempt_to_display_current_attempt(current_attempt))
+    new_display_data.update(current_attempt_to_display_current_attempt(a))
     new_display_data.update(attempts_to_display_attempts(all_attempts_for_lifter))
 
     # w+ open mode should open the file for overwriting its contents, creating
