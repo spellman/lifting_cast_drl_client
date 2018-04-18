@@ -289,6 +289,32 @@ def update_decisions_in_liftingcast():
         referee["changes"] = truncate_changes(changes)
         referee.save()
 
+def set_decisions_and_update_in_liftingcast(left_white,
+                                            left_red,
+                                            left_blue,
+                                            left_yellow,
+                                            head_white,
+                                            head_red,
+                                            head_blue,
+                                            head_yellow,
+                                            right_white,
+                                            right_red,
+                                            right_blue,
+                                            right_yellow):
+    set_decisions(left_white,
+                  left_red,
+                  left_blue,
+                  left_yellow,
+                  head_white,
+                  head_red,
+                  head_blue,
+                  head_yellow,
+                  right_white,
+                  right_red,
+                  right_blue,
+                  right_yellow)
+    update_decisions_in_liftingcast()
+
 def record_decisions_and_advance_lifter_in_liftingcast(next_attempt_id,
                                                        drl_clock_value_in_milliseconds):
     platform = liftingcast_db[PLATFORM_ID]
