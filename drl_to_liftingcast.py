@@ -331,8 +331,7 @@ def set_decisions_and_update_in_liftingcast(left_white,
                   right_yellow)
     update_decisions_in_liftingcast()
 
-def record_decisions_and_advance_lifter_in_liftingcast(next_attempt_id,
-                                                       drl_clock_value_in_milliseconds):
+def record_decisions_in_liftingcast():
     platform = liftingcast_db[PLATFORM_ID]
     attempt = liftingcast_db[platform["currentAttemptId"]]
 
@@ -350,11 +349,6 @@ def record_decisions_and_advance_lifter_in_liftingcast(next_attempt_id,
     global decisions
     decisions = empty_decisions()
     update_decisions_in_liftingcast()
-
-    platform["currentAttemptId"] = next_attempt_id
-    platform["clockState"] = "initial"
-    platform["clockTimerLength"] = drl_clock_value_in_milliseconds
-    platform.save()
 
 def set_liftingcast_clock(drl_clock_value_in_milliseconds):
     platform = liftingcast_db[PLATFORM_ID]

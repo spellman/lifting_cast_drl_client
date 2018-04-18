@@ -392,8 +392,8 @@ def is_change_to_some_attempt_of_current_lifter(change):
 
 def lifter_to_display_lifter(lifter):
     return OrderedDict([
-        ("name", lifter["name"]),
-        ("team_name", lifter["team"])
+        ("name", lifter.get("name")),
+        ("team_name", lifter.get("team"))
     ])
 
 lift_names_to_display_lift_names = {"squat": "squat",
@@ -401,12 +401,12 @@ lift_names_to_display_lift_names = {"squat": "squat",
                                     "dead": "deadlift"}
 
 def display_lift_name(attempt):
-    return lift_names_to_display_lift_names.get(attempt["liftName"]);
+    return lift_names_to_display_lift_names.get(attempt.get("liftName"));
 
 def current_attempt_to_display_current_attempt(current_attempt):
     return OrderedDict([
         ("current_lift", display_lift_name(current_attempt)),
-        ("current_attempt_number", current_attempt["attemptNumber"])
+        ("current_attempt_number", current_attempt.get("attemptNumber"))
     ])
 
 def make_attempt_weight_key(attempt):
@@ -422,29 +422,29 @@ def attempts_to_display_attempts(attempts):
     attempt_results = {make_attempt_result_key(attempt): attempt.get("result") for attempt in attempts}
 
     result = OrderedDict()
-    result["squat_1_weight"] = attempt_weights["squat_1_weight"]
-    result["squat_1_result"] = attempt_results["squat_1_result"]
-    result["squat_2_weight"] = attempt_weights["squat_2_weight"]
-    result["squat_2_result"] = attempt_results["squat_2_result"]
-    result["squat_3_weight"] = attempt_weights["squat_3_weight"]
-    result["squat_3_result"] = attempt_results["squat_3_result"]
-    result["bench_1_weight"] = attempt_weights["bench_1_weight"]
-    result["bench_1_result"] = attempt_results["bench_1_result"]
-    result["bench_2_weight"] = attempt_weights["bench_2_weight"]
-    result["bench_2_result"] = attempt_results["bench_2_result"]
-    result["bench_3_weight"] = attempt_weights["bench_3_weight"]
-    result["bench_3_result"] = attempt_results["bench_3_result"]
-    result["deadlift_1_weight"] = attempt_weights["deadlift_1_weight"]
-    result["deadlift_1_result"] = attempt_results["deadlift_1_result"]
-    result["deadlift_2_weight"] = attempt_weights["deadlift_2_weight"]
-    result["deadlift_2_result"] = attempt_results["deadlift_2_result"]
-    result["deadlift_3_weight"] = attempt_weights["deadlift_3_weight"]
-    result["deadlift_3_result"] = attempt_results["deadlift_3_result"]
+    result["squat_1_weight"] = attempt_weights.get("squat_1_weight")
+    result["squat_1_result"] = attempt_results.get("squat_1_result")
+    result["squat_2_weight"] = attempt_weights.get("squat_2_weight")
+    result["squat_2_result"] = attempt_results.get("squat_2_result")
+    result["squat_3_weight"] = attempt_weights.get("squat_3_weight")
+    result["squat_3_result"] = attempt_results.get("squat_3_result")
+    result["bench_1_weight"] = attempt_weights.get("bench_1_weight")
+    result["bench_1_result"] = attempt_results.get("bench_1_result")
+    result["bench_2_weight"] = attempt_weights.get("bench_2_weight")
+    result["bench_2_result"] = attempt_results.get("bench_2_result")
+    result["bench_3_weight"] = attempt_weights.get("bench_3_weight")
+    result["bench_3_result"] = attempt_results.get("bench_3_result")
+    result["deadlift_1_weight"] = attempt_weights.get("deadlift_1_weight")
+    result["deadlift_1_result"] = attempt_results.get("deadlift_1_result")
+    result["deadlift_2_weight"] = attempt_weights.get("deadlift_2_weight")
+    result["deadlift_2_result"] = attempt_results.get("deadlift_2_result")
+    result["deadlift_3_weight"] = attempt_weights.get("deadlift_3_weight")
+    result["deadlift_3_result"] = attempt_results.get("deadlift_3_result")
     return result
 
 
 
-def update_display_data(lifter, current_attempt, attempts_for_lifter):
+def update_display_data(lifter, current_attempt):
     """The output file is a JSON file of the form
     {
       "name": "Tony Cardella",
@@ -471,10 +471,17 @@ def update_display_data(lifter, current_attempt, attempts_for_lifter):
       "deadlift_3_result": null
     }
     """
+    if lifter is None:
+        l = {}
+        all_attempts_for_lifter = []
+    else:
+        l = lifter
+        all_attempts_for_lifter = get_all_attempts_for_lifter(doc_id(l))
+
     new_display_data = OrderedDict()
-    new_display_data.update(lifter_to_display_lifter(lifter))
+    new_display_data.update(lifter_to_display_lifter(l))
     new_display_data.update(current_attempt_to_display_current_attempt(current_attempt))
-    new_display_data.update(attempts_to_display_attempts(attempts_for_lifter))
+    new_display_data.update(attempts_to_display_attempts(all_attempts_for_lifter))
 
     # w+ open mode should open the file for overwriting its contents, creating
     # the file if it doesn't exist.
@@ -484,11 +491,37 @@ def update_display_data(lifter, current_attempt, attempts_for_lifter):
 
 
 
+
+
+
+
+# This is the duration to which DRL sets its timer after a decision is inputted.
+# NOTHING IS ENFORCING THAT RELATIONSHIP!
+# Advancing liftingcast from here, though, means that DRL doesn't have to
+# maintain local state to track the current attempt.
+INITIAL_CLOCK_VALUE_IN_MILLISECONDS = 60000
+
+def advance_liftingcast_to_next_lifter(next_lifter_attempt):
+    if lifter_attempt is None:
+        next_attempt_id = None
+    else:
+        next_attempt_id = doc_id(next_lifter_attempt.attempt)
+
+    platform = liftingcast_db[PLATFORM_ID]
+    platform["currentAttemptId"] = next_attempt_id
+    platform["clockState"] = "initial"
+    platform["clockTimerLength"] = INITIAL_CLOCK_VALUE_IN_MILLISECONDS
+    platform.save()
+
+
+
+
+
+
+
 # Init output file with current attempt if there is one.
 if is_valid_attempt_for_lifting_order(current_attempt):
-    update_display_data(get_current_lifter(),
-                        current_attempt,
-                        get_all_attempts_for_lifter(current_lifter_id()))
+    update_display_data(get_current_lifter(), current_attempt)
 
 
 
@@ -522,9 +555,7 @@ for change in changes:
             new_current_attempt = local_db[new_current_attempt_id]
             if (is_valid_attempt_for_lifting_order(new_current_attempt)):
                 current_attempt = new_current_attempt
-                update_display_data(get_current_lifter(),
-                                    current_attempt,
-                                    get_all_attempts_for_lifter(current_lifter_id()))
+                update_display_data(get_current_lifter(), current_attempt)
 
 
 
@@ -537,13 +568,11 @@ for change in changes:
         if next_lifter_attempt:
             (next_lifter, next_attempt) = next_lifter_attempt
             current_attempt = next_attempt
-            update_display_data(next_lifter,
-                                next_attempt,
-                                get_all_attempts_for_lifter(next_lifter["_id"]))
+            update_display_data(next_lifter, next_attempt)
         else:
-            update_display_data(get_current_lifter(),
-                                change["doc"],
-                                get_all_attempts_for_lifter(current_lifter_id()))
+            update_display_data(None, None)
+
+        advance_liftingcast_to_next_lifter(next_lifter_attempt)
 
 
 
@@ -552,9 +581,7 @@ for change in changes:
         pp.pprint(change)
         print "\n"
 
-        update_display_data(get_current_lifter(),
-                            current_attempt,
-                            get_all_attempts_for_lifter(current_lifter_id()))
+        update_display_data(get_current_lifter(), current_attempt)
 
 
 
@@ -564,9 +591,7 @@ for change in changes:
         print "\n"
 
         if is_valid_attempt_for_lifting_order(change["doc"]):
-            update_display_data(get_current_lifter(),
-                                current_attempt,
-                                get_all_attempts_for_lifter(current_lifter_id()))
+            update_display_data(get_current_lifter(), current_attempt)
 
 
 
