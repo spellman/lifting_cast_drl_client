@@ -116,11 +116,15 @@ except IOError:
 
 
 print "\n{}  Started\n".format(timestamp())
-print "Day {day_number} of the meet:\n    Meet ID: {meet_id}\n    Password: {password}\nPlatform ID: {platform_id}\nOutput file: {output_file}\n".format(day_number=DAY_NUMBER,
-                                                               meet_id=MEET_ID,
-                                                               password=PASSWORD,
-                                                               platform_id=PLATFORM_ID,
-                                                               output_file=OUTPUT_FILE)
+print """Day {day_number} of the meet:
+Meet ID: {meet_id}
+Password: {password}
+Platform ID: {platform_id}
+Output file: {output_file}""".format(day_number=DAY_NUMBER,
+                                     meet_id=MEET_ID,
+                                     password=PASSWORD,
+                                     platform_id=PLATFORM_ID,
+                                     output_file=OUTPUT_FILE)
 
 
 
@@ -397,7 +401,7 @@ lift_names_to_display_lift_names = {"squat": "squat",
                                     "dead": "deadlift"}
 
 def display_lift_name(attempt):
-    return lift_names_to_display_lift_names.get(attempt.get("liftName"));
+    return lift_names_to_display_lift_names.get(attempt.get("liftName"))
 
 def current_attempt_to_display_current_attempt(current_attempt):
     return OrderedDict([
@@ -548,7 +552,7 @@ for change in changes:
         new_current_attempt_id = change["doc"]["currentAttemptId"]
         if new_current_attempt_id:
             new_current_attempt = local_db[new_current_attempt_id]
-            if (is_valid_attempt_for_lifting_order(new_current_attempt)):
+            if is_valid_attempt_for_lifting_order(new_current_attempt):
                 current_attempt = new_current_attempt
                 update_display_data(get_current_lifter(), current_attempt)
 
