@@ -540,9 +540,6 @@ print "{timestamp}  {output_file} will be continually updated with display data 
 for change in changes:
     if is_heartbeat(change):
         print "{}  heartbeat -- still connected to db _changes feed".format(timestamp())
-        print "current attempt"
-        pp.pprint(current_attempt)
-        print "\n"
 
 
 
