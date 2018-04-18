@@ -260,6 +260,18 @@ def set_decisions(left_white,
                   right_red,
                   right_blue,
                   right_yellow):
+    print "left white: {}".format(left_white)
+    print "left red: {}".format(left_red)
+    print "left blue: {}".format(left_blue)
+    print "left yellow: {}".format(left_yellow)
+    print "head white: {}".format(head_white)
+    print "head red: {}".format(head_red)
+    print "head blue: {}".format(head_blue)
+    print "head yellow: {}".format(head_yellow)
+    print "right white: {}".format(right_white)
+    print "right red: {}".format(right_red)
+    print "right blue: {}".format(right_blue)
+    print "right yellow: {}".format(right_yellow)
     assert are_valid_light_and_cards(left_white, left_red, left_blue, left_yellow)
     assert are_valid_light_and_cards(head_white, head_red, head_blue, head_yellow)
     assert are_valid_light_and_cards(right_white, right_red, right_blue, right_yellow)
