@@ -1,5 +1,6 @@
 #!/usr/bin/env python2
 
+import sys
 import argparse
 import pprint
 import traceback
@@ -8,8 +9,6 @@ from collections import namedtuple, OrderedDict
 from numbers import Number
 import datetime
 from time import sleep
-
-
 
 try:
     from cloudant.client import CouchDB
@@ -48,39 +47,80 @@ def timestamp():
 parser = argparse.ArgumentParser(description="Set up continuous pull replication between liftingcast.com CouchDB database and a local CouchDB database and update a file with the data to be displayed by the DRL lights/display program. Note that this script requires CouchDB to be locally accessible and running.")
 
 parser.add_argument("-d", "--day-number", dest="day_number",
-                    type=int,
                     required=True,
                     help="The day number within 2018 Collegiate Nationals: 1 for Thursday, 2 for Friday, 3 for Saturday, 4 for Sunday")
 
-parser.add_argument("-p", "--platform-id", dest="platform_id",
-                    required=True,
-                    help="The platform ID")
-
-parser.add_argument("-o", "--output-file", dest="output_file",
-                    required=True,
-                    help="The file to which this script will write current lifter data and which DRL will read in.")
-
 ARGS = parser.parse_args()
 DAY_NUMBER = ARGS.day_number
-PLATFORM_ID = ARGS.platform_id
-OUTPUT_FILE = ARGS.output_file
 
 
 
-# Set up meet ID and password for CouchDB database.
+# Set up platform ID, meet ID, and meet password
 
-# TODO: There should be a function from the day the script is run to the meet ID and password for the meet (i.e., the database) for that day.
-MEET_ID = "myvrzp8l3bty"
-PASSWORD = "xm4sj4ms"
+PLATFORM_ID_FILE = "platform-id"
+
+try:
+    with open(PLATFORM_ID_FILE, "r") as f:
+        PLATFORM_ID = f.readline().rstrip()
+except IOError:
+    print "Could not find {}.".format(PLATFORM_ID_FILE)
+    print "Make a file called {} at top level of the project, containing only the platform ID for which this Raspberry Pi will be used.".format(PLATFORM_ID_FILE)
+    print "Example {}:".format(PLATFORM_ID_FILE)
+    print "pjspmhobe9kh"
+    sys.exit(1)
+
+
+
+
+OUTPUT_FILE_FILE = "output-file"
+
+try:
+    with open(OUTPUT_FILE_FILE, "r") as f:
+        OUTPUT_FILE = f.readline().rstrip()
+except IOError:
+    print "Could not find {}.".format(OUTPUT_FILE_FILE)
+    print "Make a file called {} at top level of the project, containing only file path of the file to which this script will write current lifter data and which DRL will read in.".format(OUTPUT_FILE_FILE)
+    print "Example {}:".format(OUTPUT_FILE_FILE)
+    print "drl-input.json"
+    sys.exit(1)
+
+
+
+MEET_CREDENTIALS_FILE = "meet-credentials.json"
+
+try:
+    with open(MEET_CREDENTIALS_FILE, "r") as f:
+        MEETS_BY_DAY = json.load(f)
+        print "\n\nMEETS_BY_DAY"
+        pp.pprint(MEETS_BY_DAY)
+        print "\n\n"
+        MEET = MEETS_BY_DAY[DAY_NUMBER]
+        MEET_ID = MEET["meet_id"]
+        PASSWORD = MEET["password"]
+except IOError:
+    print "Could not find {}.".format(MEET_CREDENTIALS_FILE)
+    print "{} is a JSON file that maps a day to the meet ID and password for that day's \"meet\" in liftingcast.com. Place it at the top level of this project".format(MEET_CREDENTIALS_FILE)
+    print "Example {}:".format(MEET_CREDENTIALS_FILE)
+    pp.pprint(json.dumps({
+        "1": {"meet_id": "mIZBmLDa4wVXu8aK",
+              "password": "MkojKWse7damCtQL"},
+        "2": {"meet_id": "IJKgVqAtyGKbC1zW",
+              "password": "aZJonoH4yfRl4zK1"},
+        "3": {"meet_id": "XapITaFKcThBMY1C",
+              "password": "cR5VLkToc9Pr/G0e"},
+        "4": {"meet_id": "NdwoWgdTK4gsH7w0",
+              "password": "lQGIbdIeKljK1Tdv"}
+    }))
+    sys.exit(1)
 
 
 
 print "\n{}  Started\n".format(timestamp())
 print "Day {day_number} of the meet:\n    Meet ID: {meet_id}\n    Password: {password}\nPlatform ID: {platform_id}\nOutput file: {output_file}\n".format(day_number=DAY_NUMBER,
-                                                                                                                                                         meet_id=MEET_ID,
-                                                                                                                                                         password=PASSWORD,
-                                                                                                                                                         platform_id=PLATFORM_ID,
-                                                                                                                                                         output_file=OUTPUT_FILE)
+                                                               meet_id=MEET_ID,
+                                                               password=PASSWORD,
+                                                               platform_id=PLATFORM_ID,
+                                                               output_file=OUTPUT_FILE)
 
 
 
