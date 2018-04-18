@@ -5,6 +5,8 @@
 # which the modules are used.
 
 import traceback
+import json
+import pprint
 import datetime
 
 try:
@@ -17,22 +19,64 @@ except:
 
 
 
+pp = pprint.PrettyPrinter(indent=4)
 
 
 
+# Set up platform ID, meet ID, and meet password
+
+PLATFORM_ID_FILE = "platform-id"
+
+try:
+    with open(PLATFORM_ID_FILE, "r") as f:
+        PLATFORM_ID = f.readline().rstrip()
+except IOError:
+    print "Could not find {}.".format(PLATFORM_ID_FILE)
+    print "Make a file called {} at top level of the project, containing only the platform ID for which this Raspberry Pi will be used.".format(PLATFORM_ID_FILE)
+    print "Example {}:".format(PLATFORM_ID_FILE)
+    print "pjspmhobe9kh"
 
 
 
+DAY_NUMBER_FILE = "day-number"
 
-# TODO: Platform ID and display-data file are shared between the two scripts so
-# they should read in from a single file.
-PLATFORM_ID = "pjspmhobe9kh"
+try:
+    with open(DAY_NUMBER_FILE, "r") as f:
+        DAY_NUMBER = f.readline().rstrip()
+except IOError:
+    print "Could not find {}.".format(DAY_NUMBER_FILE)
+    print "Make a file called {} at top level of the project, containing only the day number within 2018 Collegiate Nationals:\n  1 for Thursday\n  2 for Friday\n  3 for Saturday\n  4 for Sunday".format(DAY_NUMBER_FILE)
+    print "2018 Collegiate Nationals, a 4-day event, is represented as 4 separate \"meets\" inliftingcast.com. The day number determines which of those \"meets\" is used."
+    print "Example {}:".format(DAY_NUMBER_FILE)
+    print 1
 
-# Set up meet ID and password for CouchDB database.
 
-# TODO: There should be a function from the day the script is run to the meet ID and password for the meet (i.e., the database) for that day.
-MEET_ID = "myvrzp8l3bty"
-PASSWORD = "xm4sj4ms"
+
+MEET_CREDENTIALS_FILE = "meet-credentials"
+
+try:
+    with open(MEET_CREDENTIALS_FILE, "r") as f:
+        MEETS_BY_DAY = json.load(f)
+        MEET = MEETS_BY_DAY[DAY_NUMBER]
+        MEET_ID = MEET["meet_id"]
+        PASSWORD = MEET["password"]
+except IOError:
+    print "Could not find {}.".format(MEET_CREDENTIALS_FILE)
+    print "{} is a JSON file that maps a day to the meet ID and password for that day's \"meet\" in liftingcast.com. Place it at the top level of this project".format(MEET_CREDENTIALS_FILE)
+    print "Example {}:".format(MEET_CREDENTIALS_FILE)
+    pp.pprint(json.dumps({
+        "1": {"meet_id": "mIZBmLDa4wVXu8aK",
+              "password": "MkojKWse7damCtQL"},
+        "2": {"meet_id": "IJKgVqAtyGKbC1zW",
+              "password": "aZJonoH4yfRl4zK1"},
+        "3": {"meet_id": "XapITaFKcThBMY1C",
+              "password": "cR5VLkToc9Pr/G0e"},
+        "4": {"meet_id": "NdwoWgdTK4gsH7w0",
+              "password": "lQGIbdIeKljK1Tdv"}
+    }))
+
+
+
 
 
 
