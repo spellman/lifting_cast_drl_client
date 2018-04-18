@@ -82,6 +82,11 @@ except IOError:
 
 
 
+def timestamp():
+    return datetime.datetime.now().replace(microsecond=0).isoformat()
+
+
+
 # Set up liftingcast client and database
 
 liftingcast_client = CouchDB(MEET_ID,
@@ -91,14 +96,11 @@ liftingcast_client = CouchDB(MEET_ID,
                              auto_renew=True)
 liftingcast_db = liftingcast_client[MEET_ID]
 
+print "{}  liftingcast db client set up.".format(timestamp())
 
 
 
 
-
-
-def timestamp():
-    return datetime.datetime.now().replace(microsecond=0).isoformat()
 
 
 
