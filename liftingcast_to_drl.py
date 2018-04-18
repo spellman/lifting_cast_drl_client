@@ -221,14 +221,14 @@ print "{}  lifters_on_platform and all_attempts views exist".format(timestamp())
 
 print "{}  Initializing platform and current attempt...".format(timestamp())
 
+current_attempt = {}
+
 while True:
     try:
         initial_platform = local_db[PLATFORM_ID]
 
         if initial_platform.get("currentAttemptId"):
             current_attempt = local_db[initial_platform["currentAttemptId"]]
-        else:
-            current_attempt = {}
 
         break
     except KeyError:
