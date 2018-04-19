@@ -610,13 +610,22 @@ for change in changes:
 
 
 
-    elif is_change_to_some_attempt_of_current_lifter(change):
-        print "Change to some attempt of current lifter"
+    elif is_doc_of_type(change.get("doc"), DocType.ATTEMPT):
+        print "Other attempt"
         pp.pprint(change)
         print "\n"
 
-        if is_valid_attempt_for_lifting_order(change["doc"]):
-            update_display_data(get_current_lifter(), g_current_attempt)
+        lo = get_lifting_order_to_be_done()
+        if len(lo) = 0:
+            g_current_attempt = None
+            update_display_data(None, None)
+            advance_liftingcast_to_next_lifter(None)
+        else:
+            current_lifter_attempt = lo[0]
+            g_current_attempt = current_lifter_attempt.attempt
+            update_display_data(current_lifter_attempt.lifter,
+                                current_lifter_attempt.attempt)
+            advance_liftingcast_to_next_lifter(current_lifter_attempt)
 
 
 
