@@ -235,8 +235,8 @@ def fetch_doc_from_db(db_url, doc_id):
     return requests.get("{}/{}".format(db_url, doc_id),
                         auth=(MEET_ID, PASSWORD)).json()
 
-def put_doc_to_db(db_url, doc_id, d):
-    return requests.put("{}/{}".format(db_url, doc_id),
+def put_doc_to_db(db_url, d):
+    return requests.put("{}/{}".format(db_url, d["_id"]),
                         auth=(MEET_ID, PASSWORD),
                         data = json.dumps(d))
 
@@ -323,7 +323,7 @@ def update_decisions_in_liftingcast():
             liftingcast_attribute_to_changes_attribute("cards", cards, referee)
         ] + referee["changes"]
         referee["changes"] = truncate_changes(changes)
-        put_doc_to_db(liftingcast_db.database_url, referee["_id"], referee)
+        put_doc_to_db(liftingcast_db.database_url, referee)
 
 def set_decisions_and_update_in_liftingcast(left_white,
                                             left_red,
@@ -367,7 +367,7 @@ def record_decisions_in_liftingcast():
     ] + attempt["changes"]
     attempt["changes"] = truncate_changes(changes)
     try:
-        put_doc_to_db(liftingcast_db.database_url, attempt["_id"], attempt)
+        put_doc_to_db(liftingcast_db.database_url, attempt)
     except urllib2.HTTPError as err:
         if err.code == 409:
             pass
