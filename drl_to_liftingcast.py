@@ -379,17 +379,19 @@ def record_decisions_in_liftingcast():
     decisions = empty_decisions()
     update_decisions_in_liftingcast()
 
-# FIXME: Update db access to use fetch/put fns.
 def set_liftingcast_clock(drl_clock_value_in_milliseconds):
-    platform = liftingcast_db[PLATFORM_ID]
+    platform = fetch_doc_from_db(liftingcast_db.database_url,
+                                 PLATFORM_ID)
     platform["clockState"] = "initial"
     platform["clockTimerLength"] = drl_clock_value_in_milliseconds
-    platform.save()
+    put_doc_to_db(liftingcast_db.database_url, platform)
 
 def start_liftingcast_clock():
+    platform = fetch_doc_from_db(liftingcast_db.database_url,
+                                 PLATFORM_ID)
     platform = liftingcast_db[PLATFORM_ID]
     platform["clockState"] = "started"
-    platform.save()
+    put_doc_to_db(liftingcast_db.database_url, platform)
 
 def pause_liftingcast_clock(drl_clock_value_in_milliseconds):
     """liftingcast doesn't have the ability to pause the clock so we simulate
