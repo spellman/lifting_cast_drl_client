@@ -556,6 +556,11 @@ print "{timestamp}  {output_file} will be continually updated with display data 
                                                                                                               output_file=OUTPUT_FILE)
 
 for change in changes:
+    if change is None or is_doc_of_type(change.get("doc"), DocType.REF):
+        continue
+
+
+
     if is_heartbeat(change):
         print "{}  heartbeat -- still connected to db _changes feed".format(timestamp())
 
