@@ -622,7 +622,7 @@ for change in changes:
         print "\n"
 
         lo = get_lifting_order_to_be_done()
-        if len(lo) = 0:
+        if len(lo) == 0:
             g_current_attempt = None
             update_display_data(None, None)
             advance_liftingcast_to_next_lifter(None)
