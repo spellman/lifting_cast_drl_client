@@ -193,7 +193,7 @@ current_attempt = {}
 
 while True:
     try:
-        initial_platform = local_db.get(PLATFORM_ID)
+        initial_platform = local_db[PLATFORM_ID]
 
         if initial_platform["currentAttemptId"]:
             current_attempt = local_db[initial_platform["currentAttemptId"]]
@@ -362,9 +362,14 @@ def is_change_to_some_attempt_of_current_lifter(change):
 
 
 def lifter_to_display_lifter(lifter):
+    if lifter is None:
+        l = {}
+    else:
+        l = lifter
+
     return OrderedDict([
-        ("name", lifter.get("name")),
-        ("team_name", lifter.get("team"))
+        ("name", l.get("name")),
+        ("team_name", l.get("team"))
     ])
 
 lift_names_to_display_lift_names = {"squat": "squat",
@@ -375,9 +380,14 @@ def display_lift_name(attempt):
     return lift_names_to_display_lift_names.get(attempt.get("liftName"));
 
 def current_attempt_to_display_current_attempt(current_attempt):
+    if current_attempt is None:
+        a = {}
+    else:
+        a = current_attempt
+
     return OrderedDict([
-        ("current_lift", display_lift_name(current_attempt)),
-        ("current_attempt_number", current_attempt.get("attemptNumber"))
+        ("current_lift", display_lift_name(a)),
+        ("current_attempt_number", a.get("attemptNumber"))
     ])
 
 def make_attempt_weight_key(attempt):
