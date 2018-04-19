@@ -7,7 +7,7 @@ import json
 import pprint
 import datetime
 import urllib2
-from db_util import db_util
+from db_util import db
 
 try:
     from cloudant.client import CouchDB
@@ -77,8 +77,8 @@ except IOError:
     }))
     sys.exit(1)
 
-# Set up global db_util class for fetch and put to db
-g_db_util = db_util(MEET_ID, PASSWORD)
+# Set up global db class for fetch and put to db
+g_db = db(MEET_ID, PASSWORD)
 
 
 
@@ -226,12 +226,12 @@ decisions = empty_decisions()
 
 
 def get_referee_docs():
-    return {"left": g_db_util.fetch_doc_from_db(liftingcast_db.database_url,
-                                                "rleft-{}".format(PLATFORM_ID)),
-            "head": g_db_util.fetch_doc_from_db(liftingcast_db.database_url,
-                                                "rhead-{}".format(PLATFORM_ID)),
-            "right": g_db_util.fetch_doc_from_db(liftingcast_db.database_url,
-                                                 "rright-{}".format(PLATFORM_ID))}
+    return {"left": g_db.fetch_doc_from_db(liftingcast_db.database_url,
+                                           "rleft-{}".format(PLATFORM_ID)),
+            "head": g_db.fetch_doc_from_db(liftingcast_db.database_url,
+                                           "rhead-{}".format(PLATFORM_ID)),
+            "right": g_db.fetch_doc_from_db(liftingcast_db.database_url,
+                                            "rright-{}".format(PLATFORM_ID))}
 
 def common_change_data(doc):
     return {"rev": doc["_rev"], "timeStamp": timestamp()}
@@ -302,7 +302,7 @@ def update_decisions_in_liftingcast():
             liftingcast_attribute_to_changes_attribute("cards", cards, referee)
         ] + referee["changes"]
         referee["changes"] = truncate_changes(changes)
-        g_db_util.put_doc_to_db(liftingcast_db.database_url, referee)
+        g_db.put_doc_to_db(liftingcast_db.database_url, referee)
 
 def set_decisions_and_update_in_liftingcast(left_white,
                                             left_red,
@@ -331,10 +331,10 @@ def set_decisions_and_update_in_liftingcast(left_white,
     update_decisions_in_liftingcast()
 
 def record_decisions_in_liftingcast():
-    platform = g_db_util.fetch_doc_from_db(liftingcast_db.database_url,
-                                           PLATFORM_ID)
-    attempt = g_db_util.fetch_doc_from_db(liftingcast_db.database_url,
-                                          platform["currentAttemptId"])
+    platform = g_db.fetch_doc_from_db(liftingcast_db.database_url,
+                                      PLATFORM_ID)
+    attempt = g_db.fetch_doc_from_db(liftingcast_db.database_url,
+                                     platform["currentAttemptId"])
 
     result = liftingcast_decisions_to_result(decisions)
 
@@ -346,7 +346,7 @@ def record_decisions_in_liftingcast():
     ] + attempt["changes"]
     attempt["changes"] = truncate_changes(changes)
     try:
-        g_db_util.put_doc_to_db(liftingcast_db.database_url, attempt)
+        g_db.put_doc_to_db(liftingcast_db.database_url, attempt)
     except urllib2.HTTPError as err:
         if err.code == 409:
             pass
@@ -359,18 +359,18 @@ def record_decisions_in_liftingcast():
     update_decisions_in_liftingcast()
 
 def set_liftingcast_clock(drl_clock_value_in_milliseconds):
-    platform = g_db_util.fetch_doc_from_db(liftingcast_db.database_url,
-                                           PLATFORM_ID)
+    platform = g_db.fetch_doc_from_db(liftingcast_db.database_url,
+                                      PLATFORM_ID)
     platform["clockState"] = "initial"
     platform["clockTimerLength"] = drl_clock_value_in_milliseconds
-    g_db_util.put_doc_to_db(liftingcast_db.database_url, platform)
+    g_db.put_doc_to_db(liftingcast_db.database_url, platform)
 
 def start_liftingcast_clock():
-    platform = g_db_util.fetch_doc_from_db(liftingcast_db.database_url,
-                                           PLATFORM_ID)
+    platform = g_db.fetch_doc_from_db(liftingcast_db.database_url,
+                                      PLATFORM_ID)
     platform = liftingcast_db[PLATFORM_ID]
     platform["clockState"] = "started"
-    g_db_util.put_doc_to_db(liftingcast_db.database_url, platform)
+    g_db.put_doc_to_db(liftingcast_db.database_url, platform)
 
 def pause_liftingcast_clock(drl_clock_value_in_milliseconds):
     """liftingcast doesn't have the ability to pause the clock so we simulate

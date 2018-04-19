@@ -10,7 +10,7 @@ from collections import namedtuple, OrderedDict
 from numbers import Number
 import datetime
 from time import sleep
-from db_util import db_util
+from db_util import db_admin_party
 
 try:
     from cloudant.client import CouchDB
@@ -136,7 +136,7 @@ Output file: {output_file}""".format(day_number=DAY_NUMBER,
 
 
 # Set up global database util for fetch and put
-g_db_util = db_util(MEET_ID, PASSWORD)
+g_db_admin_party = db_admin_party()
 
 
 # Set up replication from liftingcast.com CouchDB to local CouchDB.
@@ -525,11 +525,12 @@ def advance_liftingcast_to_next_lifter(next_lifter_attempt):
     else:
         next_attempt_id = doc_id(next_lifter_attempt.attempt)
 
-    platform = g_db_util.fetch_doc_from_db(local_db.database_url, PLATFORM_ID)
+    platform = g_db_admin_party.fetch_doc_from_db(local_db.database_url,
+                                                  PLATFORM_ID)
     platform["currentAttemptId"] = next_attempt_id
     platform["clockState"] = "initial"
     platform["clockTimerLength"] = INITIAL_CLOCK_VALUE_IN_MILLISECONDS
-    g_db_util.put_doc_to_db(local_db.database_url, platform)
+    g_db_admin_party.put_doc_to_db(local_db.database_url, platform)
 
 
 
