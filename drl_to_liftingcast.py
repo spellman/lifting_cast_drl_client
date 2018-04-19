@@ -334,10 +334,12 @@ def set_decisions_and_update_in_liftingcast(left_white,
     update_decisions_in_liftingcast()
 
 def fetch_doc_from_db(db_url, doc_id):
-    return requests.get("{}/{}".format(db_url, doc_id)).json()
+    return requests.get("{}/{}".format(db_url, doc_id),
+                        auth=(MEET_ID, PASSWORD)).json()
 
 def put_doc_to_db(db_url, doc_id, d):
     return requests.put("{}/{}".format(db_url, doc_id),
+                        auth=(MEET_ID, PASSWORD),
                         data = json.dumps(d))
 
 def record_decisions_in_liftingcast():
