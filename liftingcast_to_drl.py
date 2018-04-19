@@ -360,7 +360,7 @@ def get_current_lifter():
 def get_next_lifter():
     lifting_order_to_be_done = get_lifting_order_to_be_done()
     if len(lifting_order_to_be_done) > 1:
-        return lifting_order_to_be_done[1]
+        return lifting_order_to_be_done[0]
     else:
         return None
 
