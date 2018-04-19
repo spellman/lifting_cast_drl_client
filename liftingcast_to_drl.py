@@ -241,14 +241,14 @@ print "{}  lifters_on_platform and all_attempts views exist".format(timestamp())
 
 print "{}  Initializing platform and current attempt...".format(timestamp())
 
-current_attempt = {}
+g_current_attempt = {}
 
 while True:
     try:
         initial_platform = local_db[PLATFORM_ID]
 
         if initial_platform.get("currentAttemptId"):
-            current_attempt = local_db[initial_platform["currentAttemptId"]]
+            g_current_attempt = local_db[initial_platform["currentAttemptId"]]
 
         break
     except KeyError:
@@ -260,10 +260,10 @@ print "{}  Initialized platform and current attempt.\n\n".format(timestamp())
 
 
 def current_attempt_id():
-    return current_attempt.get("_id")
+    return g_current_attempt.get("_id")
 
 def current_lifter_id():
-    return current_attempt.get("lifterId")
+    return g_current_attempt.get("lifterId")
 
 class DocType(Enum):
     ATTEMPT = "a"
@@ -392,7 +392,7 @@ def is_first_decision_on_current_attempt(change):
     doc = change["doc"]
     return (is_change_to_current_attempt(doc) and
             doc.get("result") in possible_lift_results and
-            not current_attempt.get("result") in possible_lift_results)
+            not g_current_attempt.get("result") in possible_lift_results)
 
 def is_change_to_current_lifter(change):
     doc = change["doc"]
@@ -538,8 +538,8 @@ def advance_liftingcast_to_next_lifter(next_lifter_attempt):
 
 
 # Init output file with current attempt if there is one.
-if is_valid_attempt_for_lifting_order(current_attempt):
-    update_display_data(get_current_lifter(), current_attempt)
+if is_valid_attempt_for_lifting_order(g_current_attempt):
+    update_display_data(get_current_lifter(), g_current_attempt)
 else:
     update_display_data(None, None)
 
@@ -571,8 +571,8 @@ for change in changes:
         if new_current_attempt_id:
             new_current_attempt = local_db[new_current_attempt_id]
             if is_valid_attempt_for_lifting_order(new_current_attempt):
-                current_attempt = new_current_attempt
-                update_display_data(get_current_lifter(), current_attempt)
+                g_current_attempt = new_current_attempt
+                update_display_data(get_current_lifter(), g_current_attempt)
 
 
 
@@ -584,7 +584,7 @@ for change in changes:
         next_lifter_attempt = get_next_lifter()
         if next_lifter_attempt:
             (next_lifter, next_attempt) = next_lifter_attempt
-            current_attempt = next_attempt
+            g_current_attempt = next_attempt
             update_display_data(next_lifter, next_attempt)
         else:
             update_display_data(None, None)
@@ -598,7 +598,7 @@ for change in changes:
         pp.pprint(change)
         print "\n"
 
-        update_display_data(get_current_lifter(), current_attempt)
+        update_display_data(get_current_lifter(), g_current_attempt)
 
 
 
@@ -608,7 +608,7 @@ for change in changes:
         print "\n"
 
         if is_valid_attempt_for_lifting_order(change["doc"]):
-            update_display_data(get_current_lifter(), current_attempt)
+            update_display_data(get_current_lifter(), g_current_attempt)
 
 
 
