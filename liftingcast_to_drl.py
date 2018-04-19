@@ -200,7 +200,7 @@ lifters_on_platform = {
     "_id": "_design/liftersOnPlatform",
     "views": {
         "lifters-on-platform": {
-            "map": "function (doc) {{\n  if (doc._id.substr(0, 1) === \"l\" && doc.platformId === \"{platform}\")\n  emit(doc._id);\n}}".format(platform=PLATFORM_ID)
+            "map": "function (doc) {{\n  if (doc._id.substr(0, 1) === \"l\" && doc.platformId === \"{platform_id}\")\n  emit(doc._id);\n}}".format(platform_id=PLATFORM_ID)
         }
     },
     "language": "javascript"
@@ -216,6 +216,15 @@ all_attempts = {
     "language": "javascript"
 }
 
+# Try to delete existing views because they may be for a different platform.
+try:
+    print "Deleting existing views so we can create fresh ones for this platform."
+    local_db["_design/liftersOnPlatform"].delete()
+    local_db["_design/allAttempts"].delete()
+except KeyError:
+    print "Views did not already exist -- we're good to create them fresh."
+
+# Create views for this platform.
 lifters_on_platform_design_doc = local_db.create_document(lifters_on_platform)
 all_attempts_design_doc = local_db.create_document(all_attempts)
 
