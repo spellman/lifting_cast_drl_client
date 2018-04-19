@@ -245,10 +245,12 @@ g_current_attempt = {}
 
 while True:
     try:
-        initial_platform = local_db[PLATFORM_ID]
+        initial_platform = g_db.fetch_doc_from_db(local_db.database_url,
+                                                  PLATFORM_ID)
 
         if initial_platform.get("currentAttemptId"):
-            g_current_attempt = local_db[initial_platform["currentAttemptId"]]
+            g_current_attempt = g_db.fetch_doc_from_db(local_db.database_url,
+                                                       initial_platform["currentAttemptId"])
 
         break
     except KeyError:
@@ -362,7 +364,7 @@ def get_all_attempts_for_lifter(lifter_id):
     return [a["doc"] for a in get_all_attempts() if a["doc"]["lifterId"] == lifter_id]
 
 def get_current_lifter():
-    return local_db[current_lifter_id()]
+    return g_db.fetch_doc_from_db(local_db.database_url, current_lifter_id())
 
 def get_next_lifter():
     lifting_order_to_be_done = get_lifting_order_to_be_done()
@@ -574,7 +576,8 @@ for change in changes:
         # Is this hitting the db or just a cache? We need it up-to-date.
         new_current_attempt_id = change["doc"]["currentAttemptId"]
         if new_current_attempt_id:
-            new_current_attempt = local_db[new_current_attempt_id]
+            new_current_attempt = g_db.fetch_doc_from_db(local_db.database_url,
+                                                         new_current_attempt_id)
             if is_valid_attempt_for_lifting_order(new_current_attempt):
                 g_current_attempt = new_current_attempt
                 update_display_data(get_current_lifter(), g_current_attempt)
