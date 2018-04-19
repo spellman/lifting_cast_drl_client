@@ -94,7 +94,7 @@ try:
         print "\n\nMEETS_BY_DAY"
         pp.pprint(MEETS_BY_DAY)
         print "\n\n"
-        MEET = MEETS_BY_DAY[DAY_NUMBER]
+        MEET = MEETS_BY_DAY.get(DAY_NUMBER)
         MEET_ID = MEET["meet_id"]
         PASSWORD = MEET["password"]
 except IOError:
@@ -165,8 +165,8 @@ local_db = local_client.create_database(MEET_ID)
 
 
 def is_our_meet_replication(replication_doc):
-    return (replication_doc["source"]["url"] == liftingcast_db.database_url and
-            replication_doc["target"]["url"] == local_db.database_url)
+    return (replication_doc.get("source").get("url") == liftingcast_db.database_url and
+            replication_doc.get("target").get("url") == local_db.database_url)
 
 rep = cloudant.replicator.Replicator(local_client)
 
@@ -188,46 +188,14 @@ else:
 
 
 
-# Make a view of the lifters on this platform
-
-# PLATFORM_ID = "pjspmhobe9kh"
-
-lifters_on_platform = {
-    "_id": "_design/liftersOnPlatform",
-    "views": {
-        "lifters-on-platform": {
-            "map": "function (doc) {{\n  if (doc._id.substr(0, 1) === \"l\" && doc.platformId === \"{platform}\")\n  emit(doc._id);\n}}".format(platform=PLATFORM_ID)
-        }
-    },
-    "language": "javascript"
-}
-
-all_attempts = {
-    "_id": "_design/allAttempts",
-    "views": {
-        "all-attempts": {
-            "map": "function (doc) {\n  if (doc._id.substr(0, 1) === \"a\")\n  emit(doc._id);\n}"
-        }
-    },
-    "language": "javascript"
-}
-
-#lifters_on_platform_design_doc = local_db.create_document(lifters_on_platform)
-#all_attempts_design_doc = local_db.create_document(all_attempts)
-
-#print "{}  lifters_on_platform and all_attempts views exist".format(timestamp())
-
-
-
-#print "{}  Initializing platform and current attempt...".format(timestamp())
 
 current_attempt = {}
 
 while True:
     try:
-        initial_platform = local_db[PLATFORM_ID]
+        initial_platform = local_db.get(PLATFORM_ID)
 
-        if initial_platform.get("currentAttemptId"):
+        if initial_platform["currentAttemptId"]:
             current_attempt = local_db[initial_platform["currentAttemptId"]]
 
         break
@@ -258,23 +226,13 @@ class DocType(Enum):
     WEIGHT_CLASS = "w"
 
 def doc_id(doc):
-    return doc["_id"]
+    return doc.get("_id")
 
 def is_doc_of_type(doc, doc_type):
     return doc_id(doc)[:1] == doc_type.value
 
 
 # React to items in local db _changes feed.
-
-#def get_lifters_on_platform():
-#    return local_db.get_view_result(lifters_on_platform_design_doc["_id"],
-#                                    "lifters-on-platform",
-#                                    include_docs=True)
-
-#def get_all_attempts():
-#    return local_db.get_view_result(all_attempts_design_doc["_id"],
-#                                    "all-attempts",
-#                                    include_docs=True)
 
 def get_all_docs():
     rows = local_db.all_docs(include_docs=True).get("rows")
@@ -292,15 +250,15 @@ LifterAttempt = namedtuple("LifterAttempt", ["lifter", "attempt"])
 
 def is_valid_attempt_for_lifting_order(attempt):
     return ("weight" in attempt and
-            isinstance(attempt["weight"], Number) and
-            attempt["weight"] > 0)
+            isinstance(attempt.get("weight"), Number) and
+            attempt.get("weight") > 0)
 
 def get_lifter_attempts_for_platform_lifting_order():
     lifters_on_platform = get_lifters_on_platform()
     lifters_by_id = {doc_id(l): l for l in lifters_on_platform}
 
     attempts = get_all_attempts()
-    lifter_attempts = [LifterAttempt(lifters_by_id.get(a["lifterId"]), a) for a in attempts]
+    lifter_attempts = [LifterAttempt(lifters_by_id.get(a.get("lifterId")), a) for a in attempts]
     # Remove lifter_attempts for lifters not on this platform and attempts
     # without weights or with non-Numeric or non-positive weights.
     attempt_lifters_in_the_lifting_order = [la for la in lifter_attempts if (
@@ -328,13 +286,13 @@ def lifting_order(lifter_attempt):
     # compatibility to that meet.
     l = lifter_attempt.lifter
     a = lifter_attempt.attempt
-    return [l["session"],
-            lift_order(a["liftName"]),
-            l["flight"],
-            a["attemptNumber"],
+    return [l.get("session"),
+            lift_order(a.get("liftName")),
+            l.get("flight"),
+            a.get("attemptNumber"),
             a.get("endOfRound", 0),
-            a["weight"],
-            l["lot"]]
+            a.get("weight"),
+            l.get("lot")]
 
 def sort_lifter_attempts(lifter_attempts):
     return sorted(lifter_attempts, key=lifting_order)
@@ -351,10 +309,10 @@ def get_lifting_order_to_be_done():
 
 
 def get_all_attempts_for_lifter(lifter_id):
-    return [a for a in get_all_attempts() if a["lifterId"] == lifter_id]
+    return [a for a in get_all_attempts() if a.get("lifterId") == lifter_id]
 
 def get_current_lifter():
-    return local_db[current_lifter_id()]
+    return local_db.get(current_lifter_id())
 
 def get_next_lifter():
     lifting_order_to_be_done = get_lifting_order_to_be_done()
@@ -370,10 +328,10 @@ def is_heartbeat(change):
 
 
 def is_different_attempt(change):
-    doc = change["doc"]
+    doc = change.get("doc")
     return (is_doc_of_type(doc, DocType.PLATFORM) and
             doc_id(doc) == PLATFORM_ID and
-            doc["currentAttemptId"] != current_attempt_id())
+            doc.get("currentAttemptId") != current_attempt_id())
 
 def is_change_to_current_attempt(doc):
     return (is_doc_of_type(doc, DocType.ATTEMPT) and
@@ -382,30 +340,30 @@ def is_change_to_current_attempt(doc):
 possible_lift_results = ["good", "bad"]
 
 def is_first_decision_on_attempt(doc):
-    decisions = [c for c in doc.get("changes", []) if c["attribute"] == "result" and c["value"] in possible_lift_results]
+    decisions = [c for c in doc.get("changes", []) if c.get("attribute") == "result" and c.get("value") in possible_lift_results]
     return (len(decisions) == 1 and
-            decisions[0]["value"] == doc["result"])
+            decisions[0].get("value") == doc.get("result"))
 
 def is_first_decision_on_current_attempt(change):
-    doc = change["doc"]
+    doc = change.get("doc")
     return (is_change_to_current_attempt(doc) and
             is_first_decision_on_attempt(doc))
 
 def is_change_to_current_lifter(change):
-    doc = change["doc"]
+    doc = change.get("doc")
     return (is_doc_of_type(doc, DocType.LIFTER) and
             doc_id(doc) == current_lifter_id())
 
 def is_change_to_some_attempt_of_current_lifter(change):
-    doc = change["doc"]
+    doc = change.get("doc")
     return (is_doc_of_type(doc, DocType.ATTEMPT) and
-            doc["lifterId"] == current_lifter_id())
+            doc.get("lifterId") == current_lifter_id())
 
 
 
 def lifter_to_display_lifter(lifter):
     return OrderedDict([
-        ("name", lifter["name"]),
+        ("name", lifter.get("name")),
         ("team_name", lifter.get("team"))
     ])
 
@@ -414,21 +372,21 @@ lift_names_to_display_lift_names = {"squat": "squat",
                                     "dead": "deadlift"}
 
 def display_lift_name(attempt):
-    return lift_names_to_display_lift_names.get(attempt["liftName"]);
+    return lift_names_to_display_lift_names.get(attempt.get("liftName"));
 
 def current_attempt_to_display_current_attempt(current_attempt):
     return OrderedDict([
         ("current_lift", display_lift_name(current_attempt)),
-        ("current_attempt_number", current_attempt["attemptNumber"])
+        ("current_attempt_number", current_attempt.get("attemptNumber"))
     ])
 
 def make_attempt_weight_key(attempt):
     return "{lift_name}_{attempt_number}_weight".format(lift_name=display_lift_name(attempt),
-                                                        attempt_number=attempt["attemptNumber"])
+                                                        attempt_number=attempt.get("attemptNumber"))
 
 def make_attempt_result_key(attempt):
     return "{lift_name}_{attempt_number}_result".format(lift_name=display_lift_name(attempt),
-                                                        attempt_number=attempt["attemptNumber"])
+                                                        attempt_number=attempt.get("attemptNumber"))
 
 def attempts_to_display_attempts(attempts):
     attempt_weights = {make_attempt_weight_key(attempt): attempt.get("weight", "") for attempt in attempts}
@@ -530,9 +488,9 @@ for change in changes:
         print "\n"
 
         # Is this hitting the db or just a cache? We need it up-to-date.
-        new_current_attempt_id = change["doc"]["currentAttemptId"]
+        new_current_attempt_id = change.get("doc").get("currentAttemptId")
         if new_current_attempt_id:
-            new_current_attempt = local_db[new_current_attempt_id]
+            new_current_attempt = local_db.get(new_current_attempt_id)
             if (is_valid_attempt_for_lifting_order(new_current_attempt)):
                 current_attempt = new_current_attempt
                 update_display_data(get_current_lifter(),
@@ -552,10 +510,10 @@ for change in changes:
             current_attempt = next_attempt
             update_display_data(next_lifter,
                                 next_attempt,
-                                get_all_attempts_for_lifter(next_lifter["_id"]))
+                                get_all_attempts_for_lifter(next_lifter.get("_id")))
         else:
             update_display_data(get_current_lifter(),
-                                change["doc"],
+                                change.get("doc"),
                                 get_all_attempts_for_lifter(current_lifter_id()))
 
 
@@ -576,7 +534,7 @@ for change in changes:
         pp.pprint(change)
         print "\n"
 
-        if is_valid_attempt_for_lifting_order(change["doc"]):
+        if is_valid_attempt_for_lifting_order(change.get("doc")):
             update_display_data(get_current_lifter(),
                                 current_attempt,
                                 get_all_attempts_for_lifter(current_lifter_id()))
