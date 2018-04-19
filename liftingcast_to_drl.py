@@ -1,6 +1,7 @@
 #!/usr/bin/env python2
 
 import sys
+import os
 import argparse
 import pprint
 import traceback
@@ -27,23 +28,12 @@ except:
 
 
 
-pp = pprint.PrettyPrinter(indent=4)
-
 def timestamp():
     return datetime.datetime.now().replace(microsecond=0).isoformat()
 
-
-
-
-
-
-
-# Set up program
-
-
+pp = pprint.PrettyPrinter(indent=4)
 
 # Parse command-line arguments
-
 parser = argparse.ArgumentParser(description="Set up continuous pull replication between liftingcast.com CouchDB database and a local CouchDB database and update a file with the data to be displayed by the DRL lights/display program. Note that this script requires CouchDB to be locally accessible and running.")
 
 parser.add_argument("-d", "--day-number", dest="day_number",
@@ -72,20 +62,6 @@ except IOError:
 
 
 
-OUTPUT_FILE_FILE = "output-file"
-
-try:
-    with open(OUTPUT_FILE_FILE, "r") as f:
-        OUTPUT_FILE = f.readline().rstrip()
-except IOError:
-    print "Could not find {}.".format(OUTPUT_FILE_FILE)
-    print "Make a file called {} at top level of the project, containing only file path of the file to which this script will write current lifter data and which DRL will read in.".format(OUTPUT_FILE_FILE)
-    print "Example {}:".format(OUTPUT_FILE_FILE)
-    print "drl-input.json"
-    sys.exit(1)
-
-
-
 MEET_CREDENTIALS_FILE = "meet-credentials.json"
 
 try:
@@ -103,107 +79,41 @@ except IOError:
     print "Example {}:".format(MEET_CREDENTIALS_FILE)
     pp.pprint(json.dumps({
         "1": {"meet_id": "mIZBmLDa4wVXu8aK",
-              "password": "MkojKWse7damCtQL"},
+            "password": "MkojKWse7damCtQL"},
         "2": {"meet_id": "IJKgVqAtyGKbC1zW",
-              "password": "aZJonoH4yfRl4zK1"},
+            "password": "aZJonoH4yfRl4zK1"},
         "3": {"meet_id": "XapITaFKcThBMY1C",
-              "password": "cR5VLkToc9Pr/G0e"},
+            "password": "cR5VLkToc9Pr/G0e"},
         "4": {"meet_id": "NdwoWgdTK4gsH7w0",
-              "password": "lQGIbdIeKljK1Tdv"}
+            "password": "lQGIbdIeKljK1Tdv"}
     }))
     sys.exit(1)
 
 
 
 print "\n{}  Started\n".format(timestamp())
-print "Day {day_number} of the meet:\n    Meet ID: {meet_id}\n    Password: {password}\nPlatform ID: {platform_id}\nOutput file: {output_file}\n".format(day_number=DAY_NUMBER,
-                                                               meet_id=MEET_ID,
-                                                               password=PASSWORD,
-                                                               platform_id=PLATFORM_ID,
-                                                               output_file=OUTPUT_FILE)
+print """Day {day_number} of the meet:
+    Meet ID: {meet_id}
+    Password: {password}
+    Platform ID: {platform_id}""".format(day_number=DAY_NUMBER,
+                                         meet_id=MEET_ID,
+                                         password=PASSWORD,
+                                         platform_id=PLATFORM_ID)
+OUTPUT_FILE = ""
 
+current_attempt = {}
 
+possible_lift_results = ["good", "bad"]
 
-
-
-
-
-# Set up replication from liftingcast.com CouchDB to local CouchDB.
-
-# Note that the example meet db uses admin party:
-# liftingcast_client = CouchDB("", "", admin_party=True, url="http://couchdb.liftingcast.com", connect=True, auto_renew=True)
-# liftingcast_db = cloudant.database.CouchDatabase(liftingcast_client, "mpcdahi7d1lz_readonly")
-
-# An actual meet will not be admin party but will have a username and password:
-# username: meet id, taken from URL when a new meet is created in liftingcast.com
-# password: set when a new meet is created in liftingcast.com
-
-# BBQ meet
-# username: myvrzp8l3bty
-# PASSWORD: xm4sj4ms
-# PLATFORM_ID: pjspmhobe9kh
-
-
-
-liftingcast_client = CouchDB(MEET_ID,
-                             PASSWORD,
-                             url="http://couchdb.liftingcast.com",
-                             connect=True,
-                             auto_renew=True)
-liftingcast_db = liftingcast_client.create_database(MEET_ID)
-
-local_client = CouchDB("",
-                       "",
-                       admin_party=True,
-                       url="http://127.0.0.1:5984",
-                       connect=True,
-                       auto_renew=True)
-local_client.create_database("_replicator")
-local_client.create_database("_global_changes")
-local_db = local_client.create_database(MEET_ID)
+lift_names_to_display_lift_names = {"squat": "squat",
+                                    "bench": "bench",
+                                    "dead": "deadlift"}
 
 
 
 def is_our_meet_replication(replication_doc):
     return (replication_doc.get("source").get("url") == liftingcast_db.database_url and
             replication_doc.get("target").get("url") == local_db.database_url)
-
-rep = cloudant.replicator.Replicator(local_client)
-
-if any(is_our_meet_replication(d) for d in rep.list_replications()):
-    print "{}  Meet is already being replicated from liftingcast.com to our local CouchDB.".format(timestamp())
-else:
-    replication_doc = rep.create_replication(source_db=liftingcast_db,
-                                             target_db=local_db,
-                                             continuous=True)
-
-    print "{}  Replication created.".format(timestamp())
-    print "You can manage the replication from the Fauxton admin panel at http://127.0.0.1:5984/_utils/#/replication"
-    print "For reference, use with Curl, etc., the replication doc is"
-    pp.pprint(replication_doc)
-
-
-
-
-
-
-
-
-current_attempt = {}
-
-while True:
-    try:
-        initial_platform = local_db[PLATFORM_ID]
-
-        if initial_platform["currentAttemptId"]:
-            current_attempt = local_db[initial_platform["currentAttemptId"]]
-
-        break
-    except KeyError:
-        print "{}  Waiting for platform and current attempt docs to sync to local database...".format(timestamp())
-        sleep(5)
-
-print "{}  Initialized platform and current attempt.\n\n".format(timestamp())
 
 
 
@@ -312,7 +222,7 @@ def get_all_attempts_for_lifter(lifter_id):
     return [a for a in get_all_attempts() if a.get("lifterId") == lifter_id]
 
 def get_current_lifter():
-    return local_db.get(current_lifter_id())
+    return local_db[current_lifter_id()]
 
 def get_next_lifter():
     lifting_order_to_be_done = get_lifting_order_to_be_done()
@@ -336,8 +246,6 @@ def is_different_attempt(change):
 def is_change_to_current_attempt(doc):
     return (is_doc_of_type(doc, DocType.ATTEMPT) and
             doc_id(doc) == current_attempt_id())
-
-possible_lift_results = ["good", "bad"]
 
 def is_first_decision_on_attempt(doc):
     decisions = [c for c in doc.get("changes", []) if c.get("attribute") == "result" and c.get("value") in possible_lift_results]
@@ -371,10 +279,6 @@ def lifter_to_display_lifter(lifter):
         ("name", l.get("name")),
         ("team_name", l.get("team"))
     ])
-
-lift_names_to_display_lift_names = {"squat": "squat",
-                                    "bench": "bench",
-                                    "dead": "deadlift"}
 
 def display_lift_name(attempt):
     return lift_names_to_display_lift_names.get(attempt.get("liftName"));
@@ -423,8 +327,6 @@ def attempts_to_display_attempts(attempts):
     result["deadlift_3_result"] = attempt_results.get("deadlift_3_result")
     return result
 
-
-
 def update_display_data(lifter, current_attempt, attempts_for_lifter):
     """The output file is a JSON file of the form
     {
@@ -465,94 +367,180 @@ def update_display_data(lifter, current_attempt, attempts_for_lifter):
 
 
 
-# Init output file with current attempt if there is one.
-if is_valid_attempt_for_lifting_order(current_attempt):
-    update_display_data(get_current_lifter(),
-                        current_attempt,
-                        get_all_attempts_for_lifter(current_lifter_id()))
 
 
 
-# style="main_only" => Only "winning" revisions are selected from the _changes
-#   feed; no conflicts or deleted former-conflicts.
-changes = local_db.infinite_changes(since="now",
-                                    heartbeat=10000,
-                                    include_docs=True,
-                                    style="main_only")
 
-print "{timestamp}  {output_file} will be continually updated with display data for DRL to read in:\n".format(timestamp=timestamp(),
-                                                                                                              output_file=OUTPUT_FILE)
+while True:
+    try:
+        OUTPUT_FILE_FILE = "output-file"
 
-for change in changes:
-    if is_heartbeat(change):
-        print "{}  heartbeat -- still connected to db _changes feed".format(timestamp())
-        print "current attempt"
-        pp.pprint(current_attempt)
-        print "\n"
+        try:
+            with open(OUTPUT_FILE_FILE, "r") as f:
+                global OUTPUT_FILE
+                OUTPUT_FILE = f.readline().rstrip()
 
+            update_display_data(None, None, [])
 
+            print "    Output file: {output_file}".format(output_file=OUTPUT_FILE)
 
-    elif is_different_attempt(change):
-        print "\"Current attempt\" set to different attempt"
-        pp.pprint(change)
-        print "\n"
+        except IOError:
+            print "Could not find {}.".format(OUTPUT_FILE_FILE)
+            print "Make a file called {} at top level of the project, containing only file path of the file to which this script will write current lifter data and which DRL will read in.".format(OUTPUT_FILE_FILE)
+            print "Example {}:".format(OUTPUT_FILE_FILE)
+            print "drl-input.json"
+            sys.exit(1)
 
-        # Is this hitting the db or just a cache? We need it up-to-date.
-        new_current_attempt_id = change.get("doc").get("currentAttemptId")
-        if new_current_attempt_id:
-            new_current_attempt = local_db.get(new_current_attempt_id)
-            if (is_valid_attempt_for_lifting_order(new_current_attempt)):
-                current_attempt = new_current_attempt
-                update_display_data(get_current_lifter(),
-                                    current_attempt,
-                                    get_all_attempts_for_lifter(current_lifter_id()))
+        except OSError:
+            print "Output file did not already exist -- no need to delete it to start fresh."
 
 
 
-    elif is_first_decision_on_current_attempt(change):
-        print "Decision on current attempt"
-        pp.pprint(change)
-        print "\n"
+        liftingcast_client = CouchDB(MEET_ID,
+                                     PASSWORD,
+                                     url="http://couchdb.liftingcast.com",
+                                     connect=True,
+                                     auto_renew=True)
+        liftingcast_db = liftingcast_client[MEET_ID]
 
-        next_lifter_attempt = get_next_lifter()
-        if next_lifter_attempt:
-            (next_lifter, next_attempt) = next_lifter_attempt
-            current_attempt = next_attempt
-            update_display_data(next_lifter,
-                                next_attempt,
-                                get_all_attempts_for_lifter(next_lifter.get("_id")))
+        local_client = CouchDB("",
+                               "",
+                               admin_party=True,
+                               url="http://127.0.0.1:5984",
+                               connect=True,
+                               auto_renew=True)
+        local_client.create_database("_replicator")
+        local_client.create_database("_global_changes")
+        local_db = local_client.create_database(MEET_ID)
+
+        rep = cloudant.replicator.Replicator(local_client)
+
+        if any(is_our_meet_replication(d) for d in rep.list_replications()):
+            print "{}  Meet is already being replicated from liftingcast.com to our local CouchDB.".format(timestamp())
         else:
-            update_display_data(get_current_lifter(),
-                                change.get("doc"),
-                                get_all_attempts_for_lifter(current_lifter_id()))
+            replication_doc = rep.create_replication(source_db=liftingcast_db,
+                                                     target_db=local_db,
+                                                     continuous=True)
+
+            print "{}  Replication created.".format(timestamp())
+            print "You can manage the replication from the Fauxton admin panel at http://127.0.0.1:5984/_utils/#/replication"
+            print "For reference, use with Curl, etc., the replication doc is"
+            pp.pprint(replication_doc)
 
 
 
-    elif is_change_to_current_lifter(change):
-        print "Change to current lifter"
-        pp.pprint(change)
-        print "\n"
+        current_attempt = {}
 
-        update_display_data(get_current_lifter(),
-                            current_attempt,
-                            get_all_attempts_for_lifter(current_lifter_id()))
+        while True:
+            try:
+                initial_platform = local_db[PLATFORM_ID]
+
+                if initial_platform["currentAttemptId"]:
+                    current_attempt = local_db[initial_platform["currentAttemptId"]]
+
+                break
+            except KeyError:
+                print "{}  Waiting for platform and current attempt docs to sync to local database...".format(timestamp())
+                sleep(5)
+
+        print "{}  Initialized platform and current attempt.\n\n".format(timestamp())
 
 
 
-    elif is_change_to_some_attempt_of_current_lifter(change):
-        print "Change to some attempt of current lifter"
-        pp.pprint(change)
-        print "\n"
-
-        if is_valid_attempt_for_lifting_order(change.get("doc")):
+        # Init output file with current attempt if there is one.
+        if is_valid_attempt_for_lifting_order(current_attempt):
             update_display_data(get_current_lifter(),
                                 current_attempt,
                                 get_all_attempts_for_lifter(current_lifter_id()))
 
 
 
-    else:
-        print "Unhandled change"
-        pp.pprint(change)
-        print "\n"
+        # style="main_only" => Only "winning" revisions are selected from the _changes
+        #   feed; no conflicts or deleted former-conflicts.
+        changes = local_db.infinite_changes(since="now",
+                                            heartbeat=10000,
+                                            include_docs=True,
+                                            style="main_only")
 
+        print "{timestamp}  {output_file} will be continually updated with display data for DRL to read in:\n".format(timestamp=timestamp(),
+                                                                                                                      output_file=OUTPUT_FILE)
+
+        for change in changes:
+            if is_heartbeat(change):
+                print "{}  heartbeat -- still connected to db _changes feed".format(timestamp())
+                print "current attempt"
+                pp.pprint(current_attempt)
+                print "\n"
+
+
+
+            elif is_different_attempt(change):
+                print "\"Current attempt\" set to different attempt"
+                pp.pprint(change)
+                print "\n"
+
+                # Is this hitting the db or just a cache? We need it up-to-date.
+                new_current_attempt_id = change.get("doc").get("currentAttemptId")
+                if new_current_attempt_id:
+                    new_current_attempt = local_db[new_current_attempt_id]
+                    if (is_valid_attempt_for_lifting_order(new_current_attempt)):
+                        current_attempt = new_current_attempt
+                        update_display_data(get_current_lifter(),
+                                            current_attempt,
+                                            get_all_attempts_for_lifter(current_lifter_id()))
+
+
+
+            elif is_first_decision_on_current_attempt(change):
+                print "Decision on current attempt"
+                pp.pprint(change)
+                print "\n"
+
+                next_lifter_attempt = get_next_lifter()
+                if next_lifter_attempt:
+                    (next_lifter, next_attempt) = next_lifter_attempt
+                    current_attempt = next_attempt
+                    update_display_data(next_lifter,
+                                        next_attempt,
+                                        get_all_attempts_for_lifter(next_lifter.get("_id")))
+                else:
+                    update_display_data(get_current_lifter(),
+                                        change.get("doc"),
+                                        get_all_attempts_for_lifter(current_lifter_id()))
+
+
+
+            elif is_change_to_current_lifter(change):
+                print "Change to current lifter"
+                pp.pprint(change)
+                print "\n"
+
+                update_display_data(get_current_lifter(),
+                                    current_attempt,
+                                    get_all_attempts_for_lifter(current_lifter_id()))
+
+
+
+            elif is_change_to_some_attempt_of_current_lifter(change):
+                print "Change to some attempt of current lifter"
+                pp.pprint(change)
+                print "\n"
+
+                if is_valid_attempt_for_lifting_order(change.get("doc")):
+                    update_display_data(get_current_lifter(),
+                                        current_attempt,
+                                        get_all_attempts_for_lifter(current_lifter_id()))
+
+
+
+            else:
+                print "Unhandled change"
+                pp.pprint(change)
+                print "\n"
+
+    except Exception as e:
+        print e
+        print "\n\nError - reinitializing..."
+
+    else:
+        break
