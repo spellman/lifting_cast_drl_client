@@ -548,7 +548,7 @@ else:
 # style="main_only" => Only "winning" revisions are selected from the _changes
 #   feed; no conflicts or deleted former-conflicts.
 changes = local_db.infinite_changes(since="now",
-                                    heartbeat=10000,
+                                    heartbeat=60000,
                                     include_docs=True,
                                     style="main_only")
 
