@@ -380,11 +380,11 @@ def is_heartbeat(change):
 def is_different_attempt(change):
     doc = change["doc"]
     return (is_doc_of_type(doc, DocType.PLATFORM) and
-            doc["currentAttemptId"] != current_attempt_id())
+            (doc.get("currentAttemptId") != current_attempt_id()))
 
 def is_change_to_current_attempt(doc):
     return (is_doc_of_type(doc, DocType.ATTEMPT) and
-            doc_id(doc) == current_attempt_id())
+            (doc_id(doc) == current_attempt_id()))
 
 possible_lift_results = ["good", "bad"]
 
