@@ -7,6 +7,7 @@ import json
 import pprint
 import datetime
 import requests
+import urllib2
 
 try:
     from cloudant.client import CouchDB
@@ -366,7 +367,7 @@ def record_decisions_in_liftingcast():
     ] + attempt["changes"]
     attempt["changes"] = truncate_changes(changes)
     try:
-        put_doc_to_db(liftingcast_db.database_url, a["_id"], a)
+        put_doc_to_db(liftingcast_db.database_url, attempt["_id"], attempt)
     except urllib2.HTTPError as err:
         if err.code == 409:
             pass
