@@ -6,6 +6,7 @@ import traceback
 import json
 import pprint
 import datetime
+import requests
 
 try:
     from cloudant.client import CouchDB
@@ -332,9 +333,18 @@ def set_decisions_and_update_in_liftingcast(left_white,
                   right_yellow)
     update_decisions_in_liftingcast()
 
+def fetch_doc_from_db(db_url, doc_id):
+    return requests.get("{}/{}".format(db_url, doc_id)).json()
+
+def put_doc_to_db(db_url, doc_id, d):
+    return requests.put("{}/{}".format(db_url, doc_id),
+                        data = json.dumps(d))
+
 def record_decisions_in_liftingcast():
-    platform = liftingcast_db[PLATFORM_ID]
-    attempt = liftingcast_db[platform["currentAttemptId"]]
+    platform = fetch_doc_from_db(liftingcast_db.database_url,
+                                 PLATFORM_ID)
+    attempt = fetch_doc_from_db(liftingcast_db.database_url,
+                                platform["currentAttemptId"])
 
     result = liftingcast_decisions_to_result(decisions)
 
@@ -345,12 +355,20 @@ def record_decisions_in_liftingcast():
         liftingcast_attribute_to_changes_attribute("decisions", decisions, attempt)
     ] + attempt["changes"]
     attempt["changes"] = truncate_changes(changes)
-    attempt.save()
+    try:
+        put_doc_to_db(liftingcast_db.database_url, a["_id"], a)
+    except urllib2.HTTPError as err:
+        if err.code == 409:
+            pass
+        else:
+            print "HTTP error while trying to write to liftingcast database. Try restarting DRL and make sure liftingcast has all data it should -- enter it manually from the scorekeeper's station as necessary."
+            sys.exit(1)
 
     global decisions
     decisions = empty_decisions()
     update_decisions_in_liftingcast()
 
+# FIXME: Update db access to use fetch/put fns.
 def set_liftingcast_clock(drl_clock_value_in_milliseconds):
     platform = liftingcast_db[PLATFORM_ID]
     platform["clockState"] = "initial"
