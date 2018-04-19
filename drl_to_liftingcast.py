@@ -239,11 +239,12 @@ def common_change_data(doc):
     return {"rev": doc["_rev"], "timeStamp": timestamp()}
 
 def liftingcast_attribute_to_changes_attribute(attribute_name, attribute_value, doc):
-    return common_change_data(doc).update({
+    common = common_change_data(doc)
+    common.update({
         "attribute": attribute_name,
         "value": attribute_value
     })
-
+    return common
 
 def truncate_changes(changes_list):
     return changes_list[:100]
