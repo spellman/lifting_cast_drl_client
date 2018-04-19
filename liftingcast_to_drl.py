@@ -366,7 +366,7 @@ def get_all_attempts_for_lifter(lifter_id):
 def get_current_lifter():
     return g_db.fetch_doc_from_db(local_db.database_url, current_lifter_id())
 
-def get_next_lifter():
+def get_current_lifter_attempt():
     lifting_order_to_be_done = get_lifting_order_to_be_done()
     if len(lifting_order_to_be_done) > 0:
         return lifting_order_to_be_done[0]
@@ -541,7 +541,8 @@ def advance_liftingcast_to_next_lifter(next_lifter_attempt):
 
 # Init output file with current attempt if there is one.
 if is_valid_attempt_for_lifting_order(g_current_attempt):
-    update_display_data(get_current_lifter(), g_current_attempt)
+    current_lifter_attempt = get_current_lifter_attempt()
+    update_display_data(current_lifter_attempt.lifter, g_current_attempt)
 else:
     update_display_data(None, None)
 
@@ -573,7 +574,8 @@ for change in changes:
         pp.pprint(change)
         print "\n"
 
-        # Is this hitting the db or just a cache? We need it up-to-date.
+        # This does not use the order because this handles a manual change
+        # of lifter.
         new_current_attempt_id = change["doc"]["currentAttemptId"]
         if new_current_attempt_id:
             new_current_attempt = g_db.fetch_doc_from_db(local_db.database_url,
@@ -589,7 +591,11 @@ for change in changes:
         pp.pprint(change)
         print "\n"
 
-        next_lifter_attempt = get_next_lifter()
+        # The decision has already been made on current_attempt
+        # so the current LifterAttempt in the lifting order is
+        # the next LifterAttempt from the point of view of this
+        # script.
+        next_lifter_attempt = get_current_lifter_attempt()
         if next_lifter_attempt:
             (next_lifter, next_attempt) = next_lifter_attempt
             g_current_attempt = next_attempt
