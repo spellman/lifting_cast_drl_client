@@ -540,6 +540,8 @@ def advance_liftingcast_to_next_lifter(next_lifter_attempt):
 # Init output file with current attempt if there is one.
 if is_valid_attempt_for_lifting_order(current_attempt):
     update_display_data(get_current_lifter(), current_attempt)
+else:
+    update_display_data(None, None)
 
 
 
