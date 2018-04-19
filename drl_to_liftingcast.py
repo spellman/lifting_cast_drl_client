@@ -230,11 +230,28 @@ decisions = empty_decisions()
 
 
 
+def fetch_doc_from_db(db_url, doc_id):
+    return requests.get("{}/{}".format(db_url, doc_id),
+                        auth=(MEET_ID, PASSWORD)).json()
+
+def put_doc_to_db(db_url, doc_id, d):
+    return requests.put("{}/{}".format(db_url, doc_id),
+                        auth=(MEET_ID, PASSWORD),
+                        data = json.dumps(d))
+
+
+
+
+
+
 
 def get_referee_docs():
-    return {"left": liftingcast_db["rleft-{}".format(PLATFORM_ID)],
-            "head": liftingcast_db["rhead-{}".format(PLATFORM_ID)],
-            "right": liftingcast_db["rright-{}".format(PLATFORM_ID)]}
+    return {"left": fetch_doc_from_db(liftingcast_db.database_url,
+                                      "rleft-{}".format(PLATFORM_ID)),
+            "head": fetch_doc_from_db(liftingcast_db.database_url,
+                                      "rhead-{}".format(PLATFORM_ID)),
+            "right": fetch_doc_from_db(liftingcast_db.database_url,
+                                       "rright-{}".format(PLATFORM_ID))}
 
 def common_change_data(doc):
     return {"rev": doc["_rev"], "timeStamp": timestamp()}
@@ -305,7 +322,7 @@ def update_decisions_in_liftingcast():
             liftingcast_attribute_to_changes_attribute("cards", cards, referee)
         ] + referee["changes"]
         referee["changes"] = truncate_changes(changes)
-        referee.save()
+        put_doc_to_db(liftingcast_db.database_url, referee["_id"], referee)
 
 def set_decisions_and_update_in_liftingcast(left_white,
                                             left_red,
@@ -332,15 +349,6 @@ def set_decisions_and_update_in_liftingcast(left_white,
                   right_blue,
                   right_yellow)
     update_decisions_in_liftingcast()
-
-def fetch_doc_from_db(db_url, doc_id):
-    return requests.get("{}/{}".format(db_url, doc_id),
-                        auth=(MEET_ID, PASSWORD)).json()
-
-def put_doc_to_db(db_url, doc_id, d):
-    return requests.put("{}/{}".format(db_url, doc_id),
-                        auth=(MEET_ID, PASSWORD),
-                        data = json.dumps(d))
 
 def record_decisions_in_liftingcast():
     platform = fetch_doc_from_db(liftingcast_db.database_url,
