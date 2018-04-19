@@ -288,14 +288,14 @@ def is_doc_of_type(doc, doc_type):
 
 # React to items in local db _changes feed.
 def get_all_docs():
-    return local_db.all_docs(include_docs=True)
+    return local_db.all_docs(include_docs=True).get("rows")
 
 def get_lifters_on_platform():
-    return [doc for doc in get_all_docs() if (is_doc_of_type(doc, DocType.LIFTER) and
-                                              doc.get("platformId") == PLATFORM_ID)]
+    return [doc.get("doc") for doc in get_all_docs() if (is_doc_of_type(doc.get("doc"), DocType.LIFTER) and
+                                                         doc.get("doc").get("platformId") == PLATFORM_ID)]
 
 def get_all_attempts():
-    return [doc for doc in get_all_docs() if is_doc_of_type(doc, DocType.ATTEMPT)]
+    return [doc.get("doc") for doc in get_all_docs() if is_doc_of_type(doc.get("doc"), DocType.ATTEMPT)]
 
 LifterAttempt = namedtuple("LifterAttempt", ["lifter", "attempt"])
 
