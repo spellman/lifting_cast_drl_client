@@ -1,7 +1,6 @@
 #!/usr/bin/env python2
 
 import sys
-import os
 import argparse
 import pprint
 import traceback
@@ -10,7 +9,6 @@ from collections import namedtuple, OrderedDict
 from numbers import Number
 import datetime
 from time import sleep
-from db_util import db_admin_party
 
 try:
     from cloudant.client import CouchDB
@@ -76,21 +74,15 @@ except IOError:
 
 OUTPUT_FILE_FILE = "output-file"
 
-
 try:
     with open(OUTPUT_FILE_FILE, "r") as f:
         OUTPUT_FILE = f.readline().rstrip()
-
-    os.remove(OUTPUT_FILE)
-
 except IOError:
     print "Could not find {}.".format(OUTPUT_FILE_FILE)
     print "Make a file called {} at top level of the project, containing only file path of the file to which this script will write current lifter data and which DRL will read in.".format(OUTPUT_FILE_FILE)
     print "Example {}:".format(OUTPUT_FILE_FILE)
     print "drl-input.json"
     sys.exit(1)
-except OSError:
-    pass
 
 
 
@@ -124,19 +116,16 @@ except IOError:
 
 
 print "\n{}  Started\n".format(timestamp())
-print """Day {day_number} of the meet:
-Meet ID: {meet_id}
-Password: {password}
-Platform ID: {platform_id}
-Output file: {output_file}""".format(day_number=DAY_NUMBER,
-                                     meet_id=MEET_ID,
-                                     password=PASSWORD,
-                                     platform_id=PLATFORM_ID,
-                                     output_file=OUTPUT_FILE)
+print "Day {day_number} of the meet:\n    Meet ID: {meet_id}\n    Password: {password}\nPlatform ID: {platform_id}\nOutput file: {output_file}\n".format(day_number=DAY_NUMBER,
+                                                               meet_id=MEET_ID,
+                                                               password=PASSWORD,
+                                                               platform_id=PLATFORM_ID,
+                                                               output_file=OUTPUT_FILE)
 
 
-# Set up global database util for fetch and put
-g_db = db_admin_party()
+
+
+
 
 
 # Set up replication from liftingcast.com CouchDB to local CouchDB.
@@ -203,54 +192,43 @@ else:
 
 # PLATFORM_ID = "pjspmhobe9kh"
 
-# lifters_on_platform = {
-#     "_id": "_design/liftersOnPlatform",
-#     "views": {
-#         "lifters-on-platform": {
-#             "map": "function (doc) {{\n  if (doc._id.substr(0, 1) === \"l\" && doc.platformId === \"{platform_id}\")\n  emit(doc._id);\n}}".format(platform_id=PLATFORM_ID)
-#         }
-#     },
-#     "language": "javascript"
-# }
+lifters_on_platform = {
+    "_id": "_design/liftersOnPlatform",
+    "views": {
+        "lifters-on-platform": {
+            "map": "function (doc) {{\n  if (doc._id.substr(0, 1) === \"l\" && doc.platformId === \"{platform}\")\n  emit(doc._id);\n}}".format(platform=PLATFORM_ID)
+        }
+    },
+    "language": "javascript"
+}
 
-# all_attempts = {
-#     "_id": "_design/allAttempts",
-#     "views": {
-#         "all-attempts": {
-#             "map": "function (doc) {\n  if (doc._id.substr(0, 1) === \"a\")\n  emit(doc._id);\n}"
-#         }
-#     },
-#     "language": "javascript"
-# }
+all_attempts = {
+    "_id": "_design/allAttempts",
+    "views": {
+        "all-attempts": {
+            "map": "function (doc) {\n  if (doc._id.substr(0, 1) === \"a\")\n  emit(doc._id);\n}"
+        }
+    },
+    "language": "javascript"
+}
 
-# # Try to delete existing views because they may be for a different platform.
-# try:
-#     print "Deleting existing views so we can create fresh ones for this platform."
-#     local_db["_design/liftersOnPlatform"].delete()
-#     local_db["_design/allAttempts"].delete()
-# except KeyError:
-#     print "Views did not already exist -- we're good to create them fresh."
+#lifters_on_platform_design_doc = local_db.create_document(lifters_on_platform)
+#all_attempts_design_doc = local_db.create_document(all_attempts)
 
-# # Create views for this platform.
-# lifters_on_platform_design_doc = local_db.create_document(lifters_on_platform)
-# all_attempts_design_doc = local_db.create_document(all_attempts)
-
-# print "{}  lifters_on_platform and all_attempts views exist".format(timestamp())
+#print "{}  lifters_on_platform and all_attempts views exist".format(timestamp())
 
 
 
-print "{}  Initializing platform and current attempt...".format(timestamp())
+#print "{}  Initializing platform and current attempt...".format(timestamp())
 
-g_current_attempt = {}
+current_attempt = {}
 
 while True:
     try:
-        initial_platform = g_db.fetch_doc_from_db(local_db.database_url,
-                                                  PLATFORM_ID)
+        initial_platform = local_db[PLATFORM_ID]
 
         if initial_platform.get("currentAttemptId"):
-            g_current_attempt = g_db.fetch_doc_from_db(local_db.database_url,
-                                                       initial_platform["currentAttemptId"])
+            current_attempt = local_db[initial_platform["currentAttemptId"]]
 
         break
     except KeyError:
@@ -262,10 +240,10 @@ print "{}  Initialized platform and current attempt.\n\n".format(timestamp())
 
 
 def current_attempt_id():
-    return g_current_attempt.get("_id")
+    return current_attempt.get("_id")
 
 def current_lifter_id():
-    return g_current_attempt.get("lifterId")
+    return current_attempt.get("lifterId")
 
 class DocType(Enum):
     ATTEMPT = "a"
@@ -287,15 +265,28 @@ def is_doc_of_type(doc, doc_type):
 
 
 # React to items in local db _changes feed.
+
+#def get_lifters_on_platform():
+#    return local_db.get_view_result(lifters_on_platform_design_doc["_id"],
+#                                    "lifters-on-platform",
+#                                    include_docs=True)
+
+#def get_all_attempts():
+#    return local_db.get_view_result(all_attempts_design_doc["_id"],
+#                                    "all-attempts",
+#                                    include_docs=True)
+
 def get_all_docs():
-    return local_db.all_docs(include_docs=True).get("rows")
+    rows = local_db.all_docs(include_docs=True).get("rows")
+    return [row.get("doc") for row in rows if row.get("doc")]
 
 def get_lifters_on_platform():
-    return [doc.get("doc") for doc in get_all_docs() if (is_doc_of_type(doc.get("doc"), DocType.LIFTER) and
-                                                         doc.get("doc").get("platformId") == PLATFORM_ID)]
+    all_docs = get_all_docs()
+    return [doc for doc in all_docs if is_doc_of_type(doc, DocType.LIFTER) and doc.get("platformId") == PLATFORM_ID]
 
 def get_all_attempts():
-    return [doc.get("doc") for doc in get_all_docs() if is_doc_of_type(doc.get("doc"), DocType.ATTEMPT)]
+    all_docs = get_all_docs()
+    return [doc for doc in all_docs if is_doc_of_type(doc, DocType.ATTEMPT)]
 
 LifterAttempt = namedtuple("LifterAttempt", ["lifter", "attempt"])
 
@@ -306,10 +297,10 @@ def is_valid_attempt_for_lifting_order(attempt):
 
 def get_lifter_attempts_for_platform_lifting_order():
     lifters_on_platform = get_lifters_on_platform()
-    lifters_by_id = {l["id"]: l["doc"] for l in lifters_on_platform}
+    lifters_by_id = {doc_id(l): l for l in lifters_on_platform}
 
     attempts = get_all_attempts()
-    lifter_attempts = [LifterAttempt(lifters_by_id.get(a["doc"]["lifterId"]), a["doc"]) for a in attempts]
+    lifter_attempts = [LifterAttempt(lifters_by_id.get(a["lifterId"]), a) for a in attempts]
     # Remove lifter_attempts for lifters not on this platform and attempts
     # without weights or with non-Numeric or non-positive weights.
     attempt_lifters_in_the_lifting_order = [la for la in lifter_attempts if (
@@ -360,12 +351,12 @@ def get_lifting_order_to_be_done():
 
 
 def get_all_attempts_for_lifter(lifter_id):
-    return [a["doc"] for a in get_all_attempts() if a["doc"]["lifterId"] == lifter_id]
+    return [a for a in get_all_attempts() if a["lifterId"] == lifter_id]
 
 def get_current_lifter():
-    return g_db.fetch_doc_from_db(local_db.database_url, current_lifter_id())
+    return local_db[current_lifter_id()]
 
-def get_current_lifter_attempt():
+def get_next_lifter():
     lifting_order_to_be_done = get_lifting_order_to_be_done()
     if len(lifting_order_to_be_done) > 0:
         return lifting_order_to_be_done[0]
@@ -381,19 +372,24 @@ def is_heartbeat(change):
 def is_different_attempt(change):
     doc = change["doc"]
     return (is_doc_of_type(doc, DocType.PLATFORM) and
-            (doc.get("currentAttemptId") != current_attempt_id()))
+            doc_id(doc) == PLATFORM_ID and
+            doc["currentAttemptId"] != current_attempt_id())
 
 def is_change_to_current_attempt(doc):
     return (is_doc_of_type(doc, DocType.ATTEMPT) and
-            (doc_id(doc) == current_attempt_id()))
+            doc_id(doc) == current_attempt_id())
 
 possible_lift_results = ["good", "bad"]
+
+def is_first_decision_on_attempt(doc):
+    decisions = [c for c in doc.get("changes", []) if c["attribute"] == "result" and c["value"] in possible_lift_results]
+    return (len(decisions) == 1 and
+            decisions[0]["value"] == doc["result"])
 
 def is_first_decision_on_current_attempt(change):
     doc = change["doc"]
     return (is_change_to_current_attempt(doc) and
-            doc.get("result") in possible_lift_results and
-            not g_current_attempt.get("result") in possible_lift_results)
+            is_first_decision_on_attempt(doc))
 
 def is_change_to_current_lifter(change):
     doc = change["doc"]
@@ -409,7 +405,7 @@ def is_change_to_some_attempt_of_current_lifter(change):
 
 def lifter_to_display_lifter(lifter):
     return OrderedDict([
-        ("name", lifter.get("name")),
+        ("name", lifter["name"]),
         ("team_name", lifter.get("team"))
     ])
 
@@ -418,12 +414,12 @@ lift_names_to_display_lift_names = {"squat": "squat",
                                     "dead": "deadlift"}
 
 def display_lift_name(attempt):
-    return lift_names_to_display_lift_names.get(attempt.get("liftName"))
+    return lift_names_to_display_lift_names.get(attempt["liftName"]);
 
 def current_attempt_to_display_current_attempt(current_attempt):
     return OrderedDict([
         ("current_lift", display_lift_name(current_attempt)),
-        ("current_attempt_number", current_attempt.get("attemptNumber"))
+        ("current_attempt_number", current_attempt["attemptNumber"])
     ])
 
 def make_attempt_weight_key(attempt):
@@ -435,7 +431,7 @@ def make_attempt_result_key(attempt):
                                                         attempt_number=attempt["attemptNumber"])
 
 def attempts_to_display_attempts(attempts):
-    attempt_weights = {make_attempt_weight_key(attempt): attempt.get("weight") for attempt in attempts}
+    attempt_weights = {make_attempt_weight_key(attempt): attempt.get("weight", "") for attempt in attempts}
     attempt_results = {make_attempt_result_key(attempt): attempt.get("result") for attempt in attempts}
 
     result = OrderedDict()
@@ -461,7 +457,7 @@ def attempts_to_display_attempts(attempts):
 
 
 
-def update_display_data(lifter, current_attempt):
+def update_display_data(lifter, current_attempt, attempts_for_lifter):
     """The output file is a JSON file of the form
     {
       "name": "Tony Cardella",
@@ -488,19 +484,10 @@ def update_display_data(lifter, current_attempt):
       "deadlift_3_result": null
     }
     """
-    if lifter is None:
-        l = {}
-        a = {}
-        all_attempts_for_lifter = []
-    else:
-        l = lifter
-        a = current_attempt
-        all_attempts_for_lifter = get_all_attempts_for_lifter(doc_id(l))
-
     new_display_data = OrderedDict()
-    new_display_data.update(lifter_to_display_lifter(l))
-    new_display_data.update(current_attempt_to_display_current_attempt(a))
-    new_display_data.update(attempts_to_display_attempts(all_attempts_for_lifter))
+    new_display_data.update(lifter_to_display_lifter(lifter))
+    new_display_data.update(current_attempt_to_display_current_attempt(current_attempt))
+    new_display_data.update(attempts_to_display_attempts(attempts_for_lifter))
 
     # w+ open mode should open the file for overwriting its contents, creating
     # the file if it doesn't exist.
@@ -510,47 +497,18 @@ def update_display_data(lifter, current_attempt):
 
 
 
-
-
-
-
-# This is the duration to which DRL sets its timer after a decision is inputted.
-# NOTHING IS ENFORCING THAT RELATIONSHIP!
-# Advancing liftingcast from here, though, means that DRL doesn't have to
-# maintain local state to track the current attempt.
-INITIAL_CLOCK_VALUE_IN_MILLISECONDS = 60000
-
-def advance_liftingcast_to_next_lifter(next_lifter_attempt):
-    if next_lifter_attempt is None:
-        next_attempt_id = None
-    else:
-        next_attempt_id = doc_id(next_lifter_attempt.attempt)
-
-    platform = g_db.fetch_doc_from_db(local_db.database_url, PLATFORM_ID)
-    platform["currentAttemptId"] = next_attempt_id
-    platform["clockState"] = "initial"
-    platform["clockTimerLength"] = INITIAL_CLOCK_VALUE_IN_MILLISECONDS
-    g_db.put_doc_to_db(local_db.database_url, platform)
-
-
-
-
-
-
-
 # Init output file with current attempt if there is one.
-if is_valid_attempt_for_lifting_order(g_current_attempt):
-    current_lifter_attempt = get_current_lifter_attempt()
-    update_display_data(current_lifter_attempt.lifter, g_current_attempt)
-else:
-    update_display_data(None, None)
+if is_valid_attempt_for_lifting_order(current_attempt):
+    update_display_data(get_current_lifter(),
+                        current_attempt,
+                        get_all_attempts_for_lifter(current_lifter_id()))
 
 
 
 # style="main_only" => Only "winning" revisions are selected from the _changes
 #   feed; no conflicts or deleted former-conflicts.
 changes = local_db.infinite_changes(since="now",
-                                    heartbeat=60000,
+                                    heartbeat=10000,
                                     include_docs=True,
                                     style="main_only")
 
@@ -558,13 +516,11 @@ print "{timestamp}  {output_file} will be continually updated with display data 
                                                                                                               output_file=OUTPUT_FILE)
 
 for change in changes:
-    if change is None or is_doc_of_type(change.get("doc"), DocType.REF):
-        continue
-
-
-
     if is_heartbeat(change):
         print "{}  heartbeat -- still connected to db _changes feed".format(timestamp())
+        print "current attempt"
+        pp.pprint(current_attempt)
+        print "\n"
 
 
 
@@ -573,15 +529,15 @@ for change in changes:
         pp.pprint(change)
         print "\n"
 
-        # This does not use the order because this handles a manual change
-        # of lifter.
+        # Is this hitting the db or just a cache? We need it up-to-date.
         new_current_attempt_id = change["doc"]["currentAttemptId"]
         if new_current_attempt_id:
-            new_current_attempt = g_db.fetch_doc_from_db(local_db.database_url,
-                                                         new_current_attempt_id)
-            if is_valid_attempt_for_lifting_order(new_current_attempt):
-                g_current_attempt = new_current_attempt
-                update_display_data(get_current_lifter(), g_current_attempt)
+            new_current_attempt = local_db[new_current_attempt_id]
+            if (is_valid_attempt_for_lifting_order(new_current_attempt)):
+                current_attempt = new_current_attempt
+                update_display_data(get_current_lifter(),
+                                    current_attempt,
+                                    get_all_attempts_for_lifter(current_lifter_id()))
 
 
 
@@ -590,19 +546,17 @@ for change in changes:
         pp.pprint(change)
         print "\n"
 
-        # The decision has already been made on current_attempt
-        # so the current LifterAttempt in the lifting order is
-        # the next LifterAttempt from the point of view of this
-        # script.
-        next_lifter_attempt = get_current_lifter_attempt()
+        next_lifter_attempt = get_next_lifter()
         if next_lifter_attempt:
             (next_lifter, next_attempt) = next_lifter_attempt
-            g_current_attempt = next_attempt
-            update_display_data(next_lifter, next_attempt)
+            current_attempt = next_attempt
+            update_display_data(next_lifter,
+                                next_attempt,
+                                get_all_attempts_for_lifter(next_lifter["_id"]))
         else:
-            update_display_data(None, None)
-
-        advance_liftingcast_to_next_lifter(next_lifter_attempt)
+            update_display_data(get_current_lifter(),
+                                change["doc"],
+                                get_all_attempts_for_lifter(current_lifter_id()))
 
 
 
@@ -611,26 +565,21 @@ for change in changes:
         pp.pprint(change)
         print "\n"
 
-        update_display_data(get_current_lifter(), g_current_attempt)
+        update_display_data(get_current_lifter(),
+                            current_attempt,
+                            get_all_attempts_for_lifter(current_lifter_id()))
 
 
 
-    elif is_doc_of_type(change.get("doc"), DocType.ATTEMPT):
-        print "Other attempt"
+    elif is_change_to_some_attempt_of_current_lifter(change):
+        print "Change to some attempt of current lifter"
         pp.pprint(change)
         print "\n"
 
-        lo = get_lifting_order_to_be_done()
-        if len(lo) == 0:
-            g_current_attempt = None
-            update_display_data(None, None)
-            advance_liftingcast_to_next_lifter(None)
-        else:
-            current_lifter_attempt = lo[0]
-            g_current_attempt = current_lifter_attempt.attempt
-            update_display_data(current_lifter_attempt.lifter,
-                                current_lifter_attempt.attempt)
-            advance_liftingcast_to_next_lifter(current_lifter_attempt)
+        if is_valid_attempt_for_lifting_order(change["doc"]):
+            update_display_data(get_current_lifter(),
+                                current_attempt,
+                                get_all_attempts_for_lifter(current_lifter_id()))
 
 
 
@@ -638,3 +587,4 @@ for change in changes:
         print "Unhandled change"
         pp.pprint(change)
         print "\n"
+
