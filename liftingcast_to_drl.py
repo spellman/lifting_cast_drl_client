@@ -203,39 +203,39 @@ else:
 
 # PLATFORM_ID = "pjspmhobe9kh"
 
-lifters_on_platform = {
-    "_id": "_design/liftersOnPlatform",
-    "views": {
-        "lifters-on-platform": {
-            "map": "function (doc) {{\n  if (doc._id.substr(0, 1) === \"l\" && doc.platformId === \"{platform_id}\")\n  emit(doc._id);\n}}".format(platform_id=PLATFORM_ID)
-        }
-    },
-    "language": "javascript"
-}
+# lifters_on_platform = {
+#     "_id": "_design/liftersOnPlatform",
+#     "views": {
+#         "lifters-on-platform": {
+#             "map": "function (doc) {{\n  if (doc._id.substr(0, 1) === \"l\" && doc.platformId === \"{platform_id}\")\n  emit(doc._id);\n}}".format(platform_id=PLATFORM_ID)
+#         }
+#     },
+#     "language": "javascript"
+# }
 
-all_attempts = {
-    "_id": "_design/allAttempts",
-    "views": {
-        "all-attempts": {
-            "map": "function (doc) {\n  if (doc._id.substr(0, 1) === \"a\")\n  emit(doc._id);\n}"
-        }
-    },
-    "language": "javascript"
-}
+# all_attempts = {
+#     "_id": "_design/allAttempts",
+#     "views": {
+#         "all-attempts": {
+#             "map": "function (doc) {\n  if (doc._id.substr(0, 1) === \"a\")\n  emit(doc._id);\n}"
+#         }
+#     },
+#     "language": "javascript"
+# }
 
-# Try to delete existing views because they may be for a different platform.
-try:
-    print "Deleting existing views so we can create fresh ones for this platform."
-    local_db["_design/liftersOnPlatform"].delete()
-    local_db["_design/allAttempts"].delete()
-except KeyError:
-    print "Views did not already exist -- we're good to create them fresh."
+# # Try to delete existing views because they may be for a different platform.
+# try:
+#     print "Deleting existing views so we can create fresh ones for this platform."
+#     local_db["_design/liftersOnPlatform"].delete()
+#     local_db["_design/allAttempts"].delete()
+# except KeyError:
+#     print "Views did not already exist -- we're good to create them fresh."
 
-# Create views for this platform.
-lifters_on_platform_design_doc = local_db.create_document(lifters_on_platform)
-all_attempts_design_doc = local_db.create_document(all_attempts)
+# # Create views for this platform.
+# lifters_on_platform_design_doc = local_db.create_document(lifters_on_platform)
+# all_attempts_design_doc = local_db.create_document(all_attempts)
 
-print "{}  lifters_on_platform and all_attempts views exist".format(timestamp())
+# print "{}  lifters_on_platform and all_attempts views exist".format(timestamp())
 
 
 
@@ -287,16 +287,15 @@ def is_doc_of_type(doc, doc_type):
 
 
 # React to items in local db _changes feed.
+def get_all_docs():
+    return local_db.all_docs(include_docs=True)
 
 def get_lifters_on_platform():
-    return local_db.get_view_result(lifters_on_platform_design_doc["_id"],
-                                    "lifters-on-platform",
-                                    include_docs=True)
+    return [doc for doc in get_all_docs() if (is_doc_of_type(doc, DocType.LIFTER) and
+                                              doc.get("platformId") == PLATFORM_ID)]
 
 def get_all_attempts():
-    return local_db.get_view_result(all_attempts_design_doc["_id"],
-                                    "all-attempts",
-                                    include_docs=True)
+    return [doc for doc in get_all_docs() if is_doc_of_type(doc, DocType.ATTEMPT)]
 
 LifterAttempt = namedtuple("LifterAttempt", ["lifter", "attempt"])
 
