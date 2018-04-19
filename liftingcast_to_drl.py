@@ -1,6 +1,7 @@
 #!/usr/bin/env python2
 
 import sys
+import os
 import argparse
 import pprint
 import traceback
@@ -74,15 +75,21 @@ except IOError:
 
 OUTPUT_FILE_FILE = "output-file"
 
+
 try:
     with open(OUTPUT_FILE_FILE, "r") as f:
         OUTPUT_FILE = f.readline().rstrip()
+
+    os.remove(OUTPUT_FILE)
+
 except IOError:
     print "Could not find {}.".format(OUTPUT_FILE_FILE)
     print "Make a file called {} at top level of the project, containing only file path of the file to which this script will write current lifter data and which DRL will read in.".format(OUTPUT_FILE_FILE)
     print "Example {}:".format(OUTPUT_FILE_FILE)
     print "drl-input.json"
     sys.exit(1)
+except OSError:
+    pass
 
 
 
