@@ -40,32 +40,22 @@ parser.add_argument("-d", "--day-number", dest="day_number",
                     required=True,
                     help="The day number within 2018 Collegiate Nationals: 1 for Thursday, 2 for Friday, 3 for Saturday, 4 for Sunday")
 
+parser.add_argument("-p", "--platform", dest="platform_number",
+                    required=True,
+                    help="The number of the platform on which this script is being run: 1, 2, 3, 4, or 5.")
+
 ARGS = parser.parse_args()
 DAY_NUMBER = ARGS.day_number
+PLATFORM_NUMBER = ARGS.platform_number
 
 
 
 # Set up platform ID, meet ID, and meet password
 
-PLATFORM_ID_FILE = "platform-id"
+MEET_INFO_FILE = "meet-info.json"
 
 try:
-    with open(PLATFORM_ID_FILE, "r") as f:
-        PLATFORM_ID = f.readline().rstrip()
-except IOError:
-    print "Could not find {}.".format(PLATFORM_ID_FILE)
-    print "Make a file called {} at top level of the project, containing only the platform ID for which this Raspberry Pi will be used.".format(PLATFORM_ID_FILE)
-    print "Example {}:".format(PLATFORM_ID_FILE)
-    print "pjspmhobe9kh"
-    sys.exit(1)
-
-
-
-
-MEET_CREDENTIALS_FILE = "meet-credentials.json"
-
-try:
-    with open(MEET_CREDENTIALS_FILE, "r") as f:
+    with open(MEET_INFO_FILE, "r") as f:
         MEETS_BY_DAY = json.load(f)
         print "\n\nMEETS_BY_DAY"
         pp.pprint(MEETS_BY_DAY)
@@ -73,20 +63,10 @@ try:
         MEET = MEETS_BY_DAY.get(DAY_NUMBER)
         MEET_ID = MEET["meet_id"]
         PASSWORD = MEET["password"]
+        PLATFORM_ID = MEET["platform_id"][PLATFORM_NUMBER]
 except IOError:
-    print "Could not find {}.".format(MEET_CREDENTIALS_FILE)
-    print "{} is a JSON file that maps a day to the meet ID and password for that day's \"meet\" in liftingcast.com. Place it at the top level of this project".format(MEET_CREDENTIALS_FILE)
-    print "Example {}:".format(MEET_CREDENTIALS_FILE)
-    pp.pprint(json.dumps({
-        "1": {"meet_id": "mIZBmLDa4wVXu8aK",
-            "password": "MkojKWse7damCtQL"},
-        "2": {"meet_id": "IJKgVqAtyGKbC1zW",
-            "password": "aZJonoH4yfRl4zK1"},
-        "3": {"meet_id": "XapITaFKcThBMY1C",
-            "password": "cR5VLkToc9Pr/G0e"},
-        "4": {"meet_id": "NdwoWgdTK4gsH7w0",
-            "password": "lQGIbdIeKljK1Tdv"}
-    }))
+    print "Could not find {}.".format(MEET_INFO_FILE)
+    print "{} is a JSON file that maps a day to the meet ID, password, and a map of platform number to platform ID for that day's \"meet\" in liftingcast.com. Place it at the top level of this project".format(MEET_INFO_FILE)
     sys.exit(1)
 
 
@@ -99,7 +79,7 @@ print """Day {day_number} of the meet:
                                          meet_id=MEET_ID,
                                          password=PASSWORD,
                                          platform_id=PLATFORM_ID)
-OUTPUT_FILE = ""
+OUTPUT_FILE = "drl-input.json"
 
 current_attempt = {}
 
@@ -365,6 +345,9 @@ def update_display_data(lifter, current_attempt, attempts_for_lifter):
         f.seek(0)
         json.dump(new_display_data, f, indent=4)
 
+def init_display_data():
+    update_display_data(None, None, [])
+
 
 
 
@@ -373,28 +356,7 @@ def update_display_data(lifter, current_attempt, attempts_for_lifter):
 
 while True:
     try:
-        OUTPUT_FILE_FILE = "output-file"
-
-        try:
-            with open(OUTPUT_FILE_FILE, "r") as f:
-                global OUTPUT_FILE
-                OUTPUT_FILE = f.readline().rstrip()
-
-            update_display_data(None, None, [])
-
-            print "    Output file: {output_file}".format(output_file=OUTPUT_FILE)
-
-        except IOError:
-            print "Could not find {}.".format(OUTPUT_FILE_FILE)
-            print "Make a file called {} at top level of the project, containing only file path of the file to which this script will write current lifter data and which DRL will read in.".format(OUTPUT_FILE_FILE)
-            print "Example {}:".format(OUTPUT_FILE_FILE)
-            print "drl-input.json"
-            sys.exit(1)
-
-        except OSError:
-            print "Output file did not already exist -- no need to delete it to start fresh."
-
-
+        init_display_data()
 
         liftingcast_client = CouchDB(MEET_ID,
                                      PASSWORD,
